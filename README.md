@@ -23,3 +23,7 @@
 
 - If you need to add new files to the project, add them to urls.txt
 
+# Notebooks
+
+- if you commit changes to a notebook, please clear all cell output before commiting.
+

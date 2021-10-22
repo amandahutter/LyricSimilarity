@@ -12,7 +12,7 @@ class MusixMatchDataset(Dataset):
                 if line[0] is '#':
                     continue
                 elif line[0] is '%':
-                    self.__classes = self.__parse_word_list__(line)
+                    self.__words = self.__parse_word_list__(line)
                 elif skiprows is None:
                     skiprows = i + 1
                     max = len(line.split(','))
@@ -45,8 +45,8 @@ class MusixMatchDataset(Dataset):
     def __parse_word_list__(line):
         return line[1:].split(',')
 
-    def get_classes(self):
-        return self.__classes
+    def get_words(self):
+        return self.__words
 
         
 

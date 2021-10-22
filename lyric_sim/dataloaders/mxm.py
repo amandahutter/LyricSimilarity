@@ -20,19 +20,19 @@ class MusixMatchDataset(Dataset):
                     length = len(line.split(','))
                     if length > max:
                         max = length
-        column_names = []
-        dtypes = {}
+        names = []
+        dtype = {}
         for i in range(max):
-            column_names.append(i)
-            dtypes[i] = np.dtype.str
-        self.data = pd.read_csv(filepath, skiprows=skiprows, names=column_names)
+            names.append(i)
+            dtype[i] = str
+        self.data = pd.read_csv(filepath, skiprows=skiprows, names=names, dtype=dtype)
 
     def __len__(self):
         return len(self.data)
 
     def __get_item__(self, index):
         row = self.data.iloc[index, 1:]
-        item = torch.zeros(len(self.__classes))
+        item = torch.zeros(len(self.__words))
         for token in row[2:]:
             if token is np.NAN:
                 break

@@ -1,7 +1,7 @@
 import unittest
 from lyric_sim.dataloaders import MusixMatchDataset
 
-dataset = MusixMatchDataset('./files/mxm_dataset_test.txt')
+dataset = MusixMatchDataset('./test_files/mxm_dataset_test.txt')
 
 class TestMxmDataset(unittest.TestCase):
 

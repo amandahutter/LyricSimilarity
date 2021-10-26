@@ -1,5 +1,5 @@
 # make sure venv is activated
-source bin/activate
+# can't do it here because CI/CD
 
 # make the build dir if it does not exist
 mkdir -p build

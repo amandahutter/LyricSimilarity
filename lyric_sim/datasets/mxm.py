@@ -30,7 +30,7 @@ class MusixMatchDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-    def __get_item__(self, index):
+    def __getitem__(self, index):
         row = self.data.iloc[index, 1:]
         item = torch.zeros(len(self.__words))
         for token in row[2:]:

@@ -1,19 +1,34 @@
 import os
+import time
 import swagger_client
 from swagger_client.rest import ApiException
 # str | Account api key, to be used in every api call
 swagger_client.configuration.api_key['apikey'] = os.getenv('MXM_API_KEY')
 
+# print available APIs
+# print(dir(swagger_client))
+
 # create an instance of the API class
-api_instance = swagger_client.TrackApi()
+lyrics_api = swagger_client.LyricsApi()
 
-print(dir(api_instance))
+# see some available methods
+# print(dir(lyrics_api))
 
-try:
-    req = api_instance.track_get_get(5920049)
-    print(dir(req))
-    print(req)
-except ApiException as api_ex:
-    print(api_ex)
-except Exception as ex:
-    print(ex)
+count = 0
+while True:
+    time.sleep(.1)
+    print(count)
+    count+=1
+    try:
+        res = lyrics_api.track_lyrics_get_get(1313157)
+        # print(res)
+        print(res)
+        exit()
+    except ApiException as api_ex:
+        print(api_ex)
+        print(count)
+        exit()
+    except Exception as ex:
+        print(ex)
+        print(count)
+        exit()

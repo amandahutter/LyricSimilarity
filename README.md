@@ -27,3 +27,8 @@
 
 - if you commit changes to a notebook, please clear all cell output before commiting.
 
+# Training a model
+`python your_model --config <your_config>`
+- configs should use the .yaml extension.
+- don't pass the extension to the argument. i.e. --config default
+

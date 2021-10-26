@@ -2,9 +2,9 @@
 # can't do it here because CI/CD
 
 # make the build dir if it does not exist
-mkdir -p build
+mkdir -p ./build
 
-wget -nc https://github.com/musixmatch/musixmatch-sdk/raw/master/dist/python-client-generated.zip -P build
+wget -nc https://github.com/musixmatch/musixmatch-sdk/raw/master/dist/python-client-generated.zip -P ./build
 
 unzip ./build/python-client-generated.zip -d ./build -n
 

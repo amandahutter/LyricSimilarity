@@ -8,4 +8,4 @@ wget -nc https://github.com/musixmatch/musixmatch-sdk/raw/master/dist/python-cli
 
 unzip ./build/python-client-generated.zip -d ./build -n
 
-cd build/python-client && python3 setup.py install
+cd ./build/python-client && python3 setup.py install

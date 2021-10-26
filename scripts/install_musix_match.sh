@@ -6,6 +6,8 @@ mkdir -p ./build
 
 wget -nc https://github.com/musixmatch/musixmatch-sdk/raw/master/dist/python-client-generated.zip -P ./build
 
-unzip ./build/python-client-generated.zip -d ./build -n
+unzip -n ./build/python-client-generated.zip -d ./build
+
+ls
 
 cd ./build/python-client && python3 setup.py install

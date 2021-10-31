@@ -29,17 +29,28 @@ class RateLimitException(Exception):
         super().__init__("Rate limit exceeded")
 
 def main():
+    """
+    Parses command line arguments and starts the downloader subroutine.
+    """
     parser = argparse.ArgumentParser(description="Download lyrics from mxm")
     parser.add_argument('--wait', help="How many seconds to wait between requests in floating point seconds.", default=.1)
     args = parser.parse_args()
     download_and_insert_lyrics(MXM_TRAIN_FILE, wait=args.wait)
+    exit(os.EX_OK)
 
 def should_update_download_history_table(download_history_rowid, stop_row, stop_reason) -> bool:
+    """
+    Decides whether we should update the download history table.
+    """
     # If we don't have information about why we stopped, don't update the download history table.
     # Next program run will just start from the last good checkpoint.
     return download_history_rowid is not None and stop_row is not None and stop_reason is not None
 
 def download_and_insert_lyrics(filepath, wait) -> None:
+    """
+    Sets up a database connection, creates tables if they do not exist, tries to download and insert lyrics,
+    and finally tries to record the download history and close the connection.
+    """
     conn = None
     download_history_rowid = None
     stop_reason = None
@@ -49,22 +60,29 @@ def download_and_insert_lyrics(filepath, wait) -> None:
         create_lyrics_table(conn)
         start_row = get_start_row(conn, filepath)
         download_history_rowid = insert_download_history(conn, filepath, int(time.time()), start_row)
-        stop_row, stop_reason = read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_history_rowid)
+        stop_row, stop_reason, not_found_count = read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_history_rowid)
     except SqlException as sqlex:
-        print("Unexpected sqlite exception during download:")
         print(sqlex)
     except Exception as ex:
-        print("Unexpected exception during download:")
         print(ex)
     finally:
         if conn:
-            if should_update_download_history_table(download_history_rowid, stop_reason, stop_reason):
-                update_download_history(conn, download_history_rowid, stop_row, stop_reason)
-            conn.commit()
-            conn.close()
+            # Only commit if we know why we are stopping. The program makes checkpoints every 1000 rows.
+            if should_update_download_history_table(download_history_rowid, stop_row):
+                update_download_history(conn, download_history_rowid, stop_row, stop_reason, not_found_count)
+                conn.commit()
+                conn.close()
+            else:
+                conn.close()
+                exit(os.EX_SOFTWARE)
 
 def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_history_rowid) -> None:
-    notfound_count=0
+    """
+    Iterates through the mxm data file, starting at start row, and tries to download the lyrics for each song row.
+    Tries to handle reasons the download failed and return them so they can be recorded in download history.
+    """
+    not_found_count=0
+    stop_reason = None
     with open(filepath) as inputfile:
         for i, line in enumerate(inputfile):
 
@@ -85,23 +103,30 @@ def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_
                     lyrics_response = download_lyrics_throttled(mxm_id, wait)
                 except ApiException as api_ex:
                     print("Error sending request to musix match.")
-                    return (i, str(api_ex))
+                    stop_reason = str(api_ex)
                 except RateLimitException as rlex:
                     print(rlex)
-                    return (i, str(rlex))
+                    stop_reason = i, str(rlex)
                 except UnhandledHttpException as unhandled_http_ex:
                     print(unhandled_http_ex)
-                    return (i, str(unhandled_http_ex))
+                    stop_reason = str(unhandled_http_ex)
                 except Exception as ex:
                     print(ex)
-                    return (i, str(ex))
-                if lyrics_response is not None:
-                    insert_lyrics(conn, mxm_id, lyrics_response)
-                else:
-                    notfound_count+=1
-        percent_not_found = notfound_count/(i-start_row)
+                    stop_reason = i, str(ex)
+                finally:
+                    if stop_reason is not None:
+                        percent_not_found = not_found_count/(i-start_row)
+                        print(f'{percent_not_found}% of lyrics not found')
+                        return (i, stop_reason, not_found_count)
+
+                    if lyrics_response is not None:
+                        insert_lyrics(conn, mxm_id, lyrics_response)
+                    else:
+                        not_found_count+=1
+
+        percent_not_found = not_found_count/(i-start_row)
         print(f'{percent_not_found}% of lyrics not found')
-        return (i, "Finished iterating over file.")
+        return (i, "Finished iterating over file.", not_found_count)
 
 def get_start_row(conn, filepath) -> int:
     """
@@ -126,12 +151,15 @@ def get_start_row(conn, filepath) -> int:
     except SqlException as sqlex:
         print("Error getting stop row from previous download")
         print(sqlex)
-        exit()
+        exit(os.EX_SOFTWARE)
 
 def insert_download_history(conn, filepath, date, start_row) -> None:
+    """
+    Inserts a download history record.
+    """
     insert_download_history_sql = """
     INSERT INTO download_history
-    VALUES (?,?,?,NULL,NULL)
+    VALUES (?,?,?,NULL,NULL,NULL)
     """
     try:
         cursor = conn.cursor()
@@ -140,24 +168,25 @@ def insert_download_history(conn, filepath, date, start_row) -> None:
     except SqlException as sqlex:
         print("Error inserting download history")
         print(sqlex)
-        exit()
+        exit(os.EX_SOFTWARE)
 
-def update_download_history(conn, download_history_rowid, stop_row, stop_reason) -> None:
+def update_download_history(conn, download_history_rowid, stop_row, stop_reason, not_found_count) -> None:
     """
         Updates a download history record with the row the program stopped at and the reason it stopped.
     """
     insert_download_history_sql = """
     UPDATE download_history
     SET stop_row = ?,
-        stop_reason = ?
+        stop_reason = ?,
+        not_found_count = ?,
     WHERE rowid = ?
     """
     try:
         cursor = conn.cursor()
-        cursor.execute(insert_download_history_sql, (stop_row, stop_reason, download_history_rowid,))
+        cursor.execute(insert_download_history_sql, (stop_row, stop_reason, not_found_count, download_history_rowid,))
     except SqlException as sqlex:
         print("Error updating download history")
-        print(sqlex)
+        raise sqlex
 
 def create_download_history_table(conn) -> None:
     """
@@ -169,7 +198,8 @@ def create_download_history_table(conn) -> None:
         download_date INTEGER,
         start_row INTEGER,
         stop_row INTEGER,
-        stop_reason TEXT
+        stop_reason TEXT,
+        not_fount INTEGER
     )
     """
     try:
@@ -178,9 +208,12 @@ def create_download_history_table(conn) -> None:
     except SqlException as sqlex:
         print("Error creating download history table.")
         print(sqlex)
-        exit()
+        exit(os.EX_SOFTWARE)
 
 def create_lyrics_table(conn) -> None:
+    """
+    Creates the lyrics table.
+    """
     create_table_sql = """
     CREATE TABLE IF NOT EXISTS lyrics (
         mxm_id INTEGER PRIMARY KEY,
@@ -197,29 +230,46 @@ def create_lyrics_table(conn) -> None:
     except SqlException as sqlex:
         print("Error creating lyrics table.")
         print(sqlex)
-        exit()
+        exit(os.EX_SOFTWARE)
 
 def download_lyrics_throttled(mxm_id, wait) -> Union[dict, None]:
+    """
+    Waits before running download_lyrics subroutine.
+    """
     time.sleep(wait)
     return download_lyrics(mxm_id)
 
 def download_lyrics(mxm_id) -> Union[dict, None]:
+    """
+    Tries to download lyrics for an mxm id.
+    """
     lyrics_api = MxmApi.LyricsApi()
     lyrics_response = lyrics_api.track_lyrics_get_get(mxm_id)
     status_code = int(lyrics_response.message.header.status_code)
-    if (status_code == 401 and os.getenv('MXM_API_KEY') is not None):
+    if (status_code is 200):
+        return lyrics_response.message.body.lyrics
+    elif (status_code == 401 and os.getenv('MXM_API_KEY') is None):
+        print("Please export your API key. Copy .env.template to .env, and fill in the API key. Then run source .env")
+        exit(os.EX_USAGE)
+    elif (status_code == 401 and os.getenv('MXM_API_KEY') is not None):
+        # Looks like mxm sends 401 for both no api key, and also rate limit. This case assumes our API key is valid.
         raise RateLimitException
     elif (status_code == 404):
         print(f'Got 404 for {mxm_id}.')
         print(lyrics_response)
         return None
-    elif (status_code != 200):
+    elif (status_code != 200 and status_code > 399):
         print(f'Got {status_code} for {mxm_id}. Raising exception.')
         print(lyrics_response)
         raise UnhandledHttpException(status_code)
-    return lyrics_response.message.body.lyrics
+    else:
+        print(f'Got status code {status_code} when downloading {mxm_id}, but can probably continue.')
+        return None
 
 def lyrics_response_to_tuple(mxm_id, lyrics_response) -> Tuple[int, int, str, int, str, str]:
+    """
+    
+    """
     return (
         mxm_id,
         int(lyrics_response.lyrics_id),
@@ -246,7 +296,7 @@ def insert_lyrics(conn, mxm_id, lyrics_response) -> None:
         cursor.execute(insert_lyrics_sql, lyrics_response_to_tuple(mxm_id, lyrics_response))
     except SqlException as sqlex:
         print(f'Error inserting lyrics for mxm id {int(lyrics_response.lyrics_id)}.')
-        print(sqlex)
+        raise sqlex
 
 if __name__ == '__main__':
     main()

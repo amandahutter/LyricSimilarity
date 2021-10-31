@@ -1,1 +1,0 @@
-unzip "./files/mxm_dataset_*.zip" -d ./files/

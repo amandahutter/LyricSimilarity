@@ -31,7 +31,7 @@ jobs:
       - checkout
       - run:
           name: Install MusixMatch client
-          command: ./scripts/install_musix_match.sh
+          command: ./scripts/install_musix_match
       - python/install-packages:
           pkg-manager: pip
           # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.

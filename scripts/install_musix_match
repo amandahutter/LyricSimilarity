@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # make sure venv is activated
 # can't do it here because CI/CD
 

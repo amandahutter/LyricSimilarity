@@ -26,6 +26,7 @@
 `./scripts/extract_datasets.sh`
 
 - If you need to add new files to the project, add them to urls.txt
+- The files are downloaded into the data_files directory
 
 # Notebooks
 

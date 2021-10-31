@@ -28,12 +28,16 @@ class RateLimitException(Exception):
     def __init__(self):
         super().__init__("Rate limit exceeded")
 
-
 def main():
     parser = argparse.ArgumentParser(description="Download lyrics from mxm")
     parser.add_argument('--wait', help="How many seconds to wait between requests in floating point seconds.", default=.1)
     args = parser.parse_args()
     download_and_insert_lyrics(MXM_TRAIN_FILE, wait=args.wait)
+
+def should_update_download_history_table(download_history_rowid, stop_row, stop_reason) -> bool:
+    # If we don't have information about why we stopped, don't update the download history table.
+    # Next program run will just start from the last good checkpoint.
+    return download_history_rowid is not None and stop_row is not None and stop_reason is not None
 
 def download_and_insert_lyrics(filepath, wait) -> None:
     conn = None
@@ -43,17 +47,18 @@ def download_and_insert_lyrics(filepath, wait) -> None:
         conn = sqlite3.connect(LYRICS_DB)
         create_download_history_table(conn)
         create_lyrics_table(conn)
-        start_row = get_stop_row(conn, filepath)
-        if start_row is None:
-            start_row = 0
+        start_row = get_start_row(conn, filepath)
         download_history_rowid = insert_download_history(conn, filepath, int(time.time()), start_row)
         stop_row, stop_reason = read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_history_rowid)
     except SqlException as sqlex:
-        print("Sqlite exception:")
+        print("Unexpected sqlite exception during download:")
         print(sqlex)
+    except Exception as ex:
+        print("Unexpected exception during download:")
+        print(ex)
     finally:
         if conn:
-            if download_history_rowid is not None:
+            if should_update_download_history_table(download_history_rowid, stop_reason, stop_reason):
                 update_download_history(conn, download_history_rowid, stop_row, stop_reason)
             conn.commit()
             conn.close()
@@ -65,7 +70,7 @@ def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_
 
             # Periodically commit db changes
             if i is not 0 and i % 1000 is 0:
-                update_download_history(conn, download_history_rowid, i, 'periodic commit')
+                update_download_history(conn, download_history_rowid, i, 'good checkpoint')
                 conn.commit()
 
             # skip all rows before start row
@@ -98,7 +103,7 @@ def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_
         print(f'{percent_not_found}% of lyrics not found')
         return (i, "Finished iterating over file.")
 
-def get_stop_row(conn, filepath) -> int:
+def get_start_row(conn, filepath) -> int:
     """
         Checks the download_history table to see if the program perviously tried to download lyrics from the mxm API.
         If it finds an entry, it returns the row number it was able to get to in the mxm dataset.
@@ -121,6 +126,7 @@ def get_stop_row(conn, filepath) -> int:
     except SqlException as sqlex:
         print("Error getting stop row from previous download")
         print(sqlex)
+        exit()
 
 def insert_download_history(conn, filepath, date, start_row) -> None:
     insert_download_history_sql = """

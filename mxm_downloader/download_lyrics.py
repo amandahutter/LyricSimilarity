@@ -235,8 +235,11 @@ def strip_warning(lyrics_body) -> str:
     return parts[0]
 
 def insert_lyrics(conn, mxm_id, lyrics_response) -> None:
+    # We might try to insert the same lyrics twice if we had to start from a checkpoint.
+    # If there is a conflict just leave the previous record.
     insert_lyrics_sql = """
         INSERT INTO lyrics VALUES (?,?,?,?,?,?)
+        ON CONFLICT(mxm_id) DO NOTHING
     """
     try:
         cursor = conn.cursor()

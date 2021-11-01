@@ -35,6 +35,7 @@ def main():
     parser = argparse.ArgumentParser(description="Download lyrics from mxm")
     parser.add_argument('--wait', help="How many seconds to wait between requests in floating point seconds.", default=.1)
     args = parser.parse_args()
+    print(f'Using sqlite3 runtime version {sqlite3.sqlite_version}')
     download_and_insert_lyrics(MXM_TRAIN_FILE, wait=args.wait)
     exit(os.EX_OK)
 
@@ -53,6 +54,7 @@ def download_and_insert_lyrics(filepath, wait) -> None:
     """
     conn = None
     download_history_rowid = None
+    stop_row = None
     stop_reason = None
     try:
         conn = sqlite3.connect(LYRICS_DB)
@@ -68,13 +70,19 @@ def download_and_insert_lyrics(filepath, wait) -> None:
     finally:
         if conn:
             # Only commit if we know why we are stopping. The program makes checkpoints every 1000 rows.
-            if should_update_download_history_table(download_history_rowid, stop_row):
+            if should_update_download_history_table(download_history_rowid, stop_row, stop_reason):
                 update_download_history(conn, download_history_rowid, stop_row, stop_reason, not_found_count)
                 conn.commit()
                 conn.close()
             else:
                 conn.close()
                 exit(os.EX_SOFTWARE)
+
+def should_create_checkpoint(linenum, start_row) -> bool:
+    """
+    Checks if we should create a checkpoint.
+    """
+    return (linenum is not 0) and (linenum % 1000 is 0) and (linenum != start_row)
 
 def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_history_rowid) -> None:
     """
@@ -87,8 +95,9 @@ def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_
         for i, line in enumerate(inputfile):
 
             # Periodically commit db changes
-            if i is not 0 and i % 1000 is 0:
-                update_download_history(conn, download_history_rowid, i, 'good checkpoint')
+            if should_create_checkpoint(i, start_row):
+                print(f'Checkpoint - committing changes at line {i}.')
+                update_download_history(conn, download_history_rowid, i, 'good checkpoint', not_found_count)
                 conn.commit()
 
             # skip all rows before start row
@@ -174,16 +183,16 @@ def update_download_history(conn, download_history_rowid, stop_row, stop_reason,
     """
         Updates a download history record with the row the program stopped at and the reason it stopped.
     """
-    insert_download_history_sql = """
+    update_download_history_sql = """
     UPDATE download_history
     SET stop_row = ?,
         stop_reason = ?,
-        not_found_count = ?,
+        not_found_count = ?
     WHERE rowid = ?
     """
     try:
         cursor = conn.cursor()
-        cursor.execute(insert_download_history_sql, (stop_row, stop_reason, not_found_count, download_history_rowid,))
+        cursor.execute(update_download_history_sql, (stop_row, stop_reason, not_found_count, download_history_rowid,))
     except SqlException as sqlex:
         print("Error updating download history")
         raise sqlex
@@ -199,7 +208,7 @@ def create_download_history_table(conn) -> None:
         start_row INTEGER,
         stop_row INTEGER,
         stop_reason TEXT,
-        not_fount INTEGER
+        not_found_count INTEGER
     )
     """
     try:
@@ -256,7 +265,6 @@ def download_lyrics(mxm_id) -> Union[dict, None]:
         raise RateLimitException
     elif (status_code == 404):
         print(f'Got 404 for {mxm_id}.')
-        print(lyrics_response)
         return None
     elif (status_code != 200 and status_code > 399):
         print(f'Got {status_code} for {mxm_id}. Raising exception.')
@@ -286,10 +294,8 @@ def strip_warning(lyrics_body) -> str:
 
 def insert_lyrics(conn, mxm_id, lyrics_response) -> None:
     # We might try to insert the same lyrics twice if we had to start from a checkpoint.
-    # If there is a conflict just leave the previous record.
     insert_lyrics_sql = """
-        INSERT INTO lyrics VALUES (?,?,?,?,?,?)
-        ON CONFLICT(mxm_id) DO NOTHING
+    INSERT INTO lyrics VALUES (?,?,?,?,?,?)
     """
     try:
         cursor = conn.cursor()

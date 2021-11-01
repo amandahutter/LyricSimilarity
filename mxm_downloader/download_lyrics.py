@@ -3,6 +3,7 @@ import argparse
 from sqlite3 import Error as SqlException
 import os
 import time
+import traceback
 import swagger_client as MxmApi
 from swagger_client.rest import ApiException
 from typing import Tuple, Union
@@ -67,6 +68,7 @@ def download_and_insert_lyrics(filepath, wait) -> None:
         print(sqlex)
     except Exception as ex:
         print(ex)
+        print(traceback.format_exc())
     finally:
         if conn:
             # Only commit if we know why we are stopping. The program makes checkpoints every 1000 rows.
@@ -94,15 +96,16 @@ def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_
     with open(filepath) as inputfile:
         for i, line in enumerate(inputfile):
 
+            # skip all rows before start row
+            if i < start_row:
+                continue
+
             # Periodically commit db changes
             if should_create_checkpoint(i, start_row):
                 print(f'Checkpoint - committing changes at line {i}.')
                 update_download_history(conn, download_history_rowid, i, 'good checkpoint', not_found_count)
                 conn.commit()
 
-            # skip all rows before start row
-            if i < start_row:
-                continue
             elif line[0] is '#' or line[0] is '%':
                 continue
             else:
@@ -115,17 +118,16 @@ def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_
                     stop_reason = str(api_ex)
                 except RateLimitException as rlex:
                     print(rlex)
-                    stop_reason = i, str(rlex)
+                    stop_reason = str(rlex)
                 except UnhandledHttpException as unhandled_http_ex:
                     print(unhandled_http_ex)
                     stop_reason = str(unhandled_http_ex)
                 except Exception as ex:
                     print(ex)
-                    stop_reason = i, str(ex)
+                    stop_reason = str(ex)
                 finally:
                     if stop_reason is not None:
-                        percent_not_found = not_found_count/(i-start_row)
-                        print(f'{percent_not_found}% of lyrics not found')
+                        print(f'{not_found_count} lyrics not found')
                         return (i, stop_reason, not_found_count)
 
                     if lyrics_response is not None:
@@ -133,8 +135,7 @@ def read_mxm_file_and_download_lyrics(conn, filepath, wait, start_row, download_
                     else:
                         not_found_count+=1
 
-        percent_not_found = not_found_count/(i-start_row)
-        print(f'{percent_not_found}% of lyrics not found')
+        print(f'{not_found_count} lyrics not found')
         return (i, "Finished iterating over file.", not_found_count)
 
 def get_start_row(conn, filepath) -> int:
@@ -146,7 +147,7 @@ def get_start_row(conn, filepath) -> int:
         SELECT stop_row
         FROM download_history
         WHERE dataset_filepath = ?
-        ORDER BY download_date
+        ORDER BY download_date DESC
         LIMIT 1
     """
     try:

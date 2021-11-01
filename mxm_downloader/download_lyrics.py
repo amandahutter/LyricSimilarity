@@ -45,7 +45,7 @@ def should_update_download_history_table(download_history_rowid, stop_row, stop_
     """
     # If we don't have information about why we stopped, don't update the download history table.
     # Next program run will just start from the last good checkpoint.
-    return download_history_rowid is not None and stop_row is not None and stop_reason is not None
+    return (download_history_rowid is not None) and (stop_row is not None) and (stop_reason is not None)
 
 def download_and_insert_lyrics(filepath, wait) -> None:
     """
@@ -276,7 +276,7 @@ def download_lyrics(mxm_id) -> Union[dict, None]:
 
 def lyrics_response_to_tuple(mxm_id, lyrics_response) -> Tuple[int, int, str, int, str, str]:
     """
-    
+    Converts an Mxm API response to a tuple used to insert into the database.
     """
     return (
         mxm_id,
@@ -288,11 +288,17 @@ def lyrics_response_to_tuple(mxm_id, lyrics_response) -> Tuple[int, int, str, in
     )
 
 def strip_warning(lyrics_body) -> str:
+    """
+    Removes the copyright information from the lyrics string.
+    """
     # assumes lyrics body strings are normal.
     parts = lyrics_body.split('*******')
     return parts[0]
 
 def insert_lyrics(conn, mxm_id, lyrics_response) -> None:
+    """
+    Inserts a lyrics record into the database.
+    """
     # We might try to insert the same lyrics twice if we had to start from a checkpoint.
     insert_lyrics_sql = """
     INSERT INTO lyrics VALUES (?,?,?,?,?,?)

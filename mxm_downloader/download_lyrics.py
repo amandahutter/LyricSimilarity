@@ -309,7 +309,7 @@ def insert_lyrics(conn, mxm_id, lyrics_response) -> None:
         cursor.execute(insert_lyrics_sql, lyrics_response_to_tuple(mxm_id, lyrics_response))
     except SqlException as sqlex:
         # TODO use upsert. My current python runtime doesn't have high enough sqlite3 version. Dependecy hell to upgrade probably.
-        if "UNIQUE constraint failed" in (str(sqlex)):
+        if "UNIQUE constraint failed" in str(sqlex):
             print(f'Already have lyrics for mxm id {int(lyrics_response.lyrics_id)}. Continuing.')
         else:
             print(f'Error inserting lyrics for mxm id {int(lyrics_response.lyrics_id)}.')

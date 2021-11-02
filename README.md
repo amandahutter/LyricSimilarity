@@ -21,11 +21,12 @@
 
 - I have both wget and wget2 on my machine. If you don't have those, use brew to install them, or just use curl.
 
-`./scripts/download_datasets.sh`
+`./scripts/download_datasets`
 
-`./scripts/extract_datasets.sh`
+`./scripts/extract_datasets`
 
 - If you need to add new files to the project, add them to urls.txt
+- The files are downloaded into the data_files directory
 
 # Notebooks
 

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+unzip "./data_files/mxm_dataset_*.zip" -d ./data_files/

@@ -5,7 +5,7 @@ from utils import parse_args_and_config
 config = parse_args_and_config()
 
 print('Loading data...')
-train_dataset = MusixMatchDataset('./files/mxm_dataset_train.txt')
+train_dataset = MusixMatchDataset('./data_files/mxm_dataset_train.txt')
 train_dataloader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
 
 print('First batch:')

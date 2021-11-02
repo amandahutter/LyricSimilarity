@@ -1,3 +1,6 @@
+#!/bin/bash
+
+mkdir -p data_files
 if  ! command -v wget2 &> /dev/null
 then
     echo "wget2 not found on your machine. using wget"

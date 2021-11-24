@@ -22,10 +22,10 @@ class MusixMatchDataset(Dataset):
                     self.data = np.zeros((num_rows, len(self.__words)))
                 else:
                     for token in line.split(',')[2:]:
-                        song_index, count = re.sub(r"{}" ,"", str(token)).split(':')
+                        word_index, count = re.sub(r"{}" ,"", str(token)).split(':')
 
                         # the song indices in the file are 1-indexed
-                        self.data[i-skip_rows-1, int(song_index)-1] = int(count)
+                        self.data[i-skip_rows-1, int(word_index)-1] = int(count)
 
     def __len__(self):
         return len(self.data)

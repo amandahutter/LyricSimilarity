@@ -24,7 +24,7 @@ class MusixMatchDataset(Dataset):
                     for token in line.split(',')[2:]:
                         word_index, count = re.sub(r"{}" ,"", str(token)).split(':')
 
-                        # the song indices in the file are 1-indexed
+                        # the word indices in the file are 1-indexed
                         self.data[i-skip_rows-1, int(word_index)-1] = int(count)
 
     def __len__(self):

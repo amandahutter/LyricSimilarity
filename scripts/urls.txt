@@ -1,3 +1,4 @@
 http://millionsongdataset.com/sites/default/files/AdditionalFiles/mxm_dataset_train.txt.zip
 http://millionsongdataset.com/sites/default/files/AdditionalFiles/mxm_dataset_test.txt.zip
 http://millionsongdataset.com/sites/default/files/AdditionalFiles/mxm_dataset.db
+http://millionsongdataset.com/sites/default/files/lastfm/lastfm_similars.db

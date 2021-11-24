@@ -19,7 +19,7 @@ class MusixMatchDataset(Dataset):
                     # we have reached the beginning of this section, find the length
                     # of the file and initialize the data matrix
                     skip_rows = i
-                    self.data = np.zeros((num_rows, len(self.__words)))
+                    self.data = np.zeros((num_rows-skip_rows-1, len(self.__words)))
                 else:
                     for token in line.split(',')[2:]:
                         word_index, count = re.sub(r"{}" ,"", str(token)).split(':')

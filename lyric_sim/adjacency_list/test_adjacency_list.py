@@ -1,7 +1,7 @@
 import unittest
 from lyric_sim.adjacency_list.adjacency_list import AdjacencyList, SongNotFoundException
 
-adjacency_list = AdjacencyList('./data_files/lastfm_similars.db')
+adjacency_list = AdjacencyList('./test_files/lastfm_similars_test.db')
 
 class TestAdjacencyList(unittest.TestCase):
 

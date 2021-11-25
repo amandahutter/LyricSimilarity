@@ -5,6 +5,7 @@ import numpy as np
 
 class MusixMatchDataset(Dataset):
     def __init__(self, filepath):
+        self.__idx_to_mxmid = {}
         with open(filepath) as inputfile:
             # find length of file for later
             num_rows = sum(1 for _ in inputfile)
@@ -21,7 +22,9 @@ class MusixMatchDataset(Dataset):
                     skip_rows = i
                     self.data = np.zeros((num_rows-skip_rows-1, len(self.__words)))
                 else:
-                    for token in line.split(',')[2:]:
+                    tokens = line.split(',')
+                    self.__idx_to_mxmid[i-skip_rows-1] = tokens[0]
+                    for token in tokens[2:]:
                         word_index, count = re.sub(r"{}" ,"", str(token)).split(':')
 
                         # the word indices in the file are 1-indexed
@@ -31,7 +34,7 @@ class MusixMatchDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, index):
-        return torch.Tensor(self.data[index])
+        return (torch.Tensor(self.data[index]), self.__idx_to_mxmid[index])
 
     @staticmethod
     def __parse_word_list__(line):

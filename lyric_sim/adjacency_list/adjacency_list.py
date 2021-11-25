@@ -1,7 +1,5 @@
 import sqlite3
 
-from lyric_sim import adjacency_list
-
 class SongNotFoundException(Exception):
     def __init__(self, mxm_id):
         super().__init__(f'Song with mxm id {mxm_id} not found in adjacency list')

@@ -1,8 +1,8 @@
 import unittest
 from lyric_sim.datasets.mxm import MusixMatchCsvDataset, MusixMatchSqliteDataset
 
-csv_dataset = MusixMatchCsvDataset('./test_files/mxm_dataset_test.txt')
-sqlite_dataset = MusixMatchSqliteDataset('./test_files/mxm_dataset_test.db', './test_files/lastfm_similars_test.db', False, False)
+csv_dataset = MusixMatchCsvDataset('./test_files/mxm_dataset.txt')
+sqlite_dataset = MusixMatchSqliteDataset('./test_files/mxm_dataset.db', './test_files/lastfm_similars.db', False, False)
 
 class TestMxmSqliteDataset(unittest.TestCase):
 

@@ -39,11 +39,10 @@ optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 N = int(N/2)
 
 for epoch in range(config['num_epochs']):
-    print(f'Training epoch {epoch}')
+    print(f'Training epoch {epoch+1}')
 
     running_loss = 0.0
     for (i, data) in enumerate(trainloader, 0):
-        print(i)
         inputs, labels = data
 
         try:

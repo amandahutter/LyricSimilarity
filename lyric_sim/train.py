@@ -29,7 +29,6 @@ num_words = len(trainset.get_words())
 
 model = HistogramModel(num_words, 8192)
 
-# TODO: update this with the custom loss module
 criterion = nn.MSELoss()
 
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
@@ -63,7 +62,6 @@ for epoch in range(config['num_epochs']):
             try:
                 targets[i] = adjacency_list.get_similarity(srcLabels[i], destLabels[i])
             except SongNotFoundException as ex:
-                # not sure if this will actually happen during training. tested this script on a subset of data so this error was thrown.
                 print(ex)
                 targets[i] = 0
 

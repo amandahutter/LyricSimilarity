@@ -3,7 +3,7 @@ from lyric_sim.datasets.mxm import MusixMatchSqliteDataset
 from lyric_sim.models.histogram import HistogramModel
 import torch
 
-dataset = MusixMatchSqliteDataset('./test_files/mxm_dataset_test.db', '', False, False)
+dataset = MusixMatchSqliteDataset('./test_files/mxm_dataset.db', '', False, False)
 class TestMxmHistogram(unittest.TestCase):
 
     def test_forward(self):

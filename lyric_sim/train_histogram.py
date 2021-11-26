@@ -71,9 +71,9 @@ for epoch in range(config['num_epochs']):
         # print statistics
         running_loss += loss.item()
 
-        if i % 10000 + 1 == N: # for some reason i is always in multiples of 10 + N...
+        if i % 100000 + 1 == N: # for some reason i is always in multiples of 10 + N...
             print('[%d, %5d] loss: %.3f' % 
-                  (epoch + 1, i + 1, running_loss / 10000))
+                  (epoch + 1, i + 1, running_loss / 100000))
             running_loss = 0.0
 
 print('Finished Training')

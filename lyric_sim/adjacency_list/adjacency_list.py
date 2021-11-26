@@ -33,7 +33,7 @@ class AdjacencyList:
             for j in range(0, len(tokens), 2):
                 adjacencies[tokens[j]] = float(tokens[j+1])
             self.__adjacency_list[key] = adjacencies
-        print('\r' + f'Loaded {i+1} song similarities')
+        print('\r' + f'Loaded {len(rows)} song similarities')
 
         cur.close()
     

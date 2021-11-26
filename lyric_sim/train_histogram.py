@@ -15,21 +15,24 @@ assert config['batch_size'] % 2 == 0
 N = config['batch_size']
 mxm_db = config['mxm_db']
 lastfm_db = config['lastfm_db']
+hidden_size = config['hidden_size']
+filter_tracks = config['filter_tracks']
+num_workers = config['num_workers']
 
 print('Loading Musix Match training data...')
-trainset = MusixMatchSqliteDataset(mxm_db, lastfm_db, True, False)
-trainloader = DataLoader(trainset, N, shuffle=True, num_workers=config['num_workers'])
+trainset = MusixMatchSqliteDataset(mxm_db, lastfm_db, filter_tracks, False)
+trainloader = DataLoader(trainset, N, shuffle=True, num_workers=num_workers, drop_last=True)
 
 print('Loading Musix Match testing data...')
-testset = MusixMatchSqliteDataset(mxm_db, lastfm_db, True, True)
-testloader = DataLoader(trainset, N, shuffle=True, num_workers=config['num_workers'])
+testset = MusixMatchSqliteDataset(mxm_db, lastfm_db, filter_tracks, True)
+testloader = DataLoader(trainset, N, shuffle=True, num_workers=num_workers, drop_last=True)
 
 print('Loading last fm adjacency list...')
-adjacency_list = AdjacencyList(lastfm_db, mxm_db, True)
+adjacency_list = AdjacencyList(lastfm_db, mxm_db, filter_tracks)
 
 num_words = len(trainset.get_words())
 
-model = HistogramModel(num_words, 8192)
+model = HistogramModel(num_words, hidden_size)
 
 criterion = nn.MSELoss()
 
@@ -45,12 +48,8 @@ for epoch in range(config['num_epochs']):
     for (i, data) in enumerate(trainloader, 0):
         inputs, labels = data
 
-        try:
-            srcInputs, destInputs = torch.split(inputs, N)
-        except ValueError:
-            # don't know how many epochs it will take to hit this but probably won't happen
-            print('reached end of data, unable to split batch into equal parts')
-            break
+        srcInputs, destInputs = torch.split(inputs, N)
+
         srcLabels = labels[:N]
         destLabels = labels[N:]
 
@@ -62,11 +61,7 @@ for epoch in range(config['num_epochs']):
         # get similarities
         targets = torch.zeros((N, 1))
         for i in range(N):
-            try:
-                targets[i] = adjacency_list.get_similarity(srcLabels[i], destLabels[i])
-            except SongNotFoundException as ex:
-                print(ex)
-                targets[i] = 0
+            targets[i] = adjacency_list.get_similarity(srcLabels[i], destLabels[i])
 
         loss = criterion(outputs, targets)
         loss.backward()

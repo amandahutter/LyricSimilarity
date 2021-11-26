@@ -9,10 +9,11 @@ from models.histogram import HistogramModel
 
 config = parse_args_and_config()
 
-# The batch size must be divisible by two, since we are splitting one batch using torch.split for src and dest nodes
-assert config['batch_size'] % 2 == 0
-
 N = config['batch_size']
+
+# The batch size must be divisible by two, since we are splitting one batch using torch.split for src and dest nodes
+assert N % 2 == 0
+
 mxm_db = config['mxm_db']
 lastfm_db = config['lastfm_db']
 hidden_size = config['hidden_size']
@@ -45,8 +46,8 @@ for epoch in range(config['num_epochs']):
     print(f'Training epoch {epoch+1}')
 
     running_loss = 0.0
-    for (i, data) in enumerate(trainloader, 0):
-        inputs, labels = data
+    for (i, batch) in enumerate(trainloader, 0):
+        inputs, labels = batch
 
         srcInputs, destInputs = torch.split(inputs, N)
 
@@ -69,9 +70,10 @@ for epoch in range(config['num_epochs']):
 
         # print statistics
         running_loss += loss.item()
-        if i % 2000 == 1999:    # print every 2000 mini-batches
-            print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 2000))
+
+        if i % 10000 + 1 == N: # for some reason i is always in multiples of 10 + N...
+            print('[%d, %5d] loss: %.3f' % 
+                  (epoch + 1, i + 1, running_loss / 10000))
             running_loss = 0.0
 
 print('Finished Training')

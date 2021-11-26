@@ -14,7 +14,7 @@ class TestMxmDataset(unittest.TestCase):
         self.assertEqual(label, 'TRAABRX12903CC4816')
     
     def test_getlen(self):
-        self.assertEqual(dataset.__len__(), 4)
+        self.assertEqual(dataset.__len__(), 128)
     
     def test_lyric_index(self):
         input, _ = dataset.__getitem__(0)

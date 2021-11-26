@@ -12,7 +12,7 @@ class AdjacencyList:
         cur.execute('SELECT * FROM similars_src')
         rows = cur.fetchall()
         for i, row in enumerate(rows):
-            if i % 1000 == 1999:
+            if i % 1000 == 999:
                 # Writes these logs on one line
                 print('\r' + f'Loaded {i+1} song similarities', end="")
             key = row[0]

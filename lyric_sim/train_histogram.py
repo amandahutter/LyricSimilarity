@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.nn as nn
-from datasets.mxm import MusixMatchDataset
+from datasets.mxm import MusixMatchSqliteDataset
 from utils import parse_args_and_config
 from adjacency_list.adjacency_list import AdjacencyList, SongNotFoundException
 from models.histogram import HistogramModel
@@ -13,17 +13,19 @@ config = parse_args_and_config()
 assert config['batch_size'] % 2 == 0
 
 N = config['batch_size']
+mxm_db = config['mxm_db']
+lastfm_db = config['lastfm_db']
 
 print('Loading Musix Match training data...')
-trainset = MusixMatchDataset(config['mxm_train_file'])
+trainset = MusixMatchSqliteDataset(mxm_db, lastfm_db, True, False)
 trainloader = DataLoader(trainset, N, shuffle=True, num_workers=config['num_workers'])
 
 print('Loading Musix Match testing data...')
-testset = MusixMatchDataset(config['mxm_test_file'])
+testset = MusixMatchSqliteDataset(mxm_db, lastfm_db, True, True)
 testloader = DataLoader(trainset, N, shuffle=True, num_workers=config['num_workers'])
 
 print('Loading last fm adjacency list...')
-adjacency_list = AdjacencyList(config['lastfm_db'])
+adjacency_list = AdjacencyList(lastfm_db, mxm_db, True)
 
 num_words = len(trainset.get_words())
 
@@ -37,9 +39,11 @@ optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 N = int(N/2)
 
 for epoch in range(config['num_epochs']):
+    print(f'Training epoch {epoch}')
 
     running_loss = 0.0
     for (i, data) in enumerate(trainloader, 0):
+        print(i)
         inputs, labels = data
 
         try:

@@ -5,11 +5,23 @@ class SongNotFoundException(Exception):
         super().__init__(f'Song with mxm id {mxm_id} not found in adjacency list')
 
 class AdjacencyList:
-    def __init__(self, similarity_database):
+    def __init__(self, similarity_database: str, lyrics_db: str, filter_by_lyrics_db: str):
         self.__adjacency_list = {}
         con = sqlite3.connect(similarity_database)
         cur = con.cursor()
-        cur.execute('SELECT * FROM similars_src')
+
+        if filter_by_lyrics_db:
+            cur.execute('ATTACH DATABASE ? AS lyrics', (lyrics_db,))
+
+        if filter_by_lyrics_db:
+            cur.execute("""
+                SELECT *
+                FROM similars_src
+                WHERE tid in
+                    (SELECT DISTINCT track_id FROM lyrics)
+                """)
+        else:
+            cur.execute('SELECT * FROM similars_src')
         rows = cur.fetchall()
         for i, row in enumerate(rows):
             if i % 1000 == 999:
@@ -22,6 +34,8 @@ class AdjacencyList:
                 adjacencies[tokens[j]] = float(tokens[j+1])
             self.__adjacency_list[key] = adjacencies
         print('\r' + f'Loaded {i+1} song similarities')
+
+        cur.close()
     
     def get_similarity(self, src, dest):
         if src not in self.__adjacency_list:

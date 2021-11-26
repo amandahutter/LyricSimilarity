@@ -10,6 +10,13 @@ class TestMxmDataset(unittest.TestCase):
 
     def test_getitem(self):
         self.assertEqual(dataset.__getitem__(0).shape[0], 5000)
+    
+    def test_getlen(self):
+        self.assertEqual(dataset.__len__(), 4)
+    
+    def test_lyric_index(self):
+        item = dataset.__getitem__(0)
+        self.assertEqual(item[1], 19)
 
 
 if __name__ == '__main__':

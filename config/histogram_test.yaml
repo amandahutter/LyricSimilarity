@@ -1,0 +1,8 @@
+---
+  batch_size: 64
+  num_epochs: 30
+  num_workers: 0
+  mxm_train_file: './test_files/mxm_dataset_test.txt'
+  mxm_test_file: './test_files/mxm_dataset_test.txt'
+  lastfm_db: './test_files/lastfm_similars_test.db'
+  

@@ -12,16 +12,16 @@ class AdjacencyList:
         cur.execute('SELECT * FROM similars_src')
         rows = cur.fetchall()
         for i, row in enumerate(rows):
-            if i % 1000 is 0:
+            if i % 1000 == 1999:
                 # Writes these logs on one line
-                print('\r' + f'Loaded {i} song similarities', end="")
+                print('\r' + f'Loaded {i+1} song similarities', end="")
             key = row[0]
             adjacencies = {}
             tokens = row[1].split(',')
             for j in range(0, len(tokens), 2):
                 adjacencies[tokens[j]] = float(tokens[j+1])
             self.__adjacency_list[key] = adjacencies
-        print('\r' + f'Loaded {i} song similarities')
+        print('\r' + f'Loaded {i+1} song similarities')
     
     def get_similarity(self, src, dest):
         if src not in self.__adjacency_list:

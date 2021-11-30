@@ -54,6 +54,7 @@ class LyricsSqliteDataset(Dataset):
         df['lyrics'] = df['lyrics'].str.lower()
         df['lyrics'] = df['lyrics'].str.strip()
         df = df[df['lyrics'] != '']
+        df.reset_index(inplace=True, drop=True)
         
         # create ids df for use later
         df_ids = df[['tid']].copy()

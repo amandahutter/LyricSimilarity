@@ -9,22 +9,24 @@ from models.histogram import HistogramModel
 
 config = parse_args_and_config()
 
-N = config['batch_size']
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f'Using device {device}')
 
-# The batch size must be divisible by two, since we are splitting one batch using torch.split for src and dest nodes
-assert N % 2 == 0
+N = config['batch_size']
 
 mxm_db = config['mxm_db']
 hidden_size = config['hidden_size']
 num_workers = config['num_workers']
+num_examples = config['num_examples']
 
 print('Loading Musix Match training data...')
-trainset = MxMLastfmJoinedDataset(mxm_db, False)
+trainset = MxMLastfmJoinedDataset(mxm_db, False, num_examples=num_examples)
 trainloader = DataLoader(trainset, N, shuffle=True, num_workers=num_workers)
 
 NUM_WORDS = 5000
 
 model = HistogramModel(NUM_WORDS*2, hidden_size)
+model.to(device)
 
 criterion = nn.MSELoss()
 
@@ -35,7 +37,7 @@ for epoch in range(config['num_epochs']):
 
     running_loss = 0.0
     for (i, batch) in enumerate(trainloader, 0):
-        inputs, labels = batch
+        inputs, labels = batch[0].to(device), batch[1].to(device)
 
         optimizer.zero_grad()
 
@@ -51,7 +53,7 @@ for epoch in range(config['num_epochs']):
 
         if i % 2000 == 0:
             print('[%d, %5d] loss: %.3f' % 
-                  (epoch + 1, i + 1, running_loss / 2000))
+                  (epoch, i, running_loss / 2000))
             running_loss = 0.0
 
 print('Finished Training')

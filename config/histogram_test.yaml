@@ -1,6 +1,7 @@
 ---
   batch_size: 8
-  num_epochs: 12
+  num_epochs: 2
   num_workers: 0
-  hidden_size: 512
-  mxm_db: './test_files/mxm_lastfm.db'
+  num_examples: 10000
+  hidden_size: 128
+  mxm_db: './data_files/mxm_lastfm.db'

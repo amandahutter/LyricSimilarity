@@ -15,7 +15,7 @@ class MxMLastfmJoinedDataset(Dataset):
     The labels are similarity score threshold between the two songs is_similar(s1, s2) >= .5 ? 1 : 0. Uses the similars_src table from lastfm only.
     """
 
-    def __init__(self, mxm_lasfm_db_path, use_test: bool, similarity_threshold=0.5):
+    def __init__(self, mxm_lasfm_db_path, use_test: bool, num_examples=500000, similarity_threshold=0.5):
 
         use_test = int(use_test)
 
@@ -30,18 +30,19 @@ class MxMLastfmJoinedDataset(Dataset):
             ON src.track_id = similars_src.src
             AND dest.track_id = similars_src.dest
             WHERE similars_src.is_test = ?
-            AND dest.histogram != '';
-        """, (use_test,)).fetchall()
+            AND dest.histogram != ''
+            LIMIT ?;
+        """, (use_test, num_examples,)).fetchall()
 
-        self.__data = np.zeros((len(examples), 10000))
+        self.__data = np.zeros((len(examples), 10000), dtype=np.int8)
         self.__labels = np.empty(len(examples), dtype=np.float32)
 
         print('Loading data into numpy array...')
         for i, example in enumerate(examples):
-            if i % 1000 == 0:
-                print('\r' + f'Loaded {i+1} word counts', end="")
+            if i % 10000 == 0:
+                print('\r' + f'Loaded {i} word counts', end="")
 
-            self.__labels[i] = 1 if example[0] >= 0.5 else 0
+            self.__labels[i] = int(example[0] >= 0.5)
 
             src_counts = example[1].split(',')
             for src_count in src_counts:

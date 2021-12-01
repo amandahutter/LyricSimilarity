@@ -28,15 +28,6 @@ def main():
     
     con.commit()
 
-# def get_word_indexes(cursor):
-#     print('Getting word indexes...')
-#     word_tups = cursor.execute('SELECT * FROM words;').fetchall()
-#     word_idxs = {}
-
-#     for i, word_tup in enumerate(word_tups):
-#         word_idxs[word_tup[0]] = i
-#     return word_idxs
-
 def get_example_id_rows(cursor):
     print('Getting example ids...')
     start = time.time()

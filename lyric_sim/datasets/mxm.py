@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 from torch.utils.data import Dataset
 import re
@@ -14,173 +15,51 @@ class MxMLastfmJoinedDataset(Dataset):
     The labels are similarity score threshold between the two songs is_similar(s1, s2) >= .5 ? 1 : 0. Uses the similars_src table from lastfm only.
     """
 
-    def __init__(self, mxm_db_path: str, lastfm_db_path: str, use_test: bool, use_saved_data: bool):
+    def __init__(self, mxm_lasfm_db_path, use_test: bool):
 
         use_test = int(use_test)
 
-        con = sqlite3.connect(mxm_db_path)
+        con = sqlite3.connect(mxm_lasfm_db_path)
         cur = con.cursor()
-        cur.execute('ATTACH DATABASE ? AS lastfm_sim', (lastfm_db_path,))
-
-        # TODO: add logic for train and test
-        if use_saved_data and os.path.exists('./data_files/histogram_examples.npy') and os.path.exists('./data_files/histogram_labels.npy'):
-            self.__data = np.load('./data_files/histogram_examples.npy')
-            self.__labels = np.load('./data_files/histogram_labels.npy')
-            return
-
-        con = sqlite3.connect(mxm_db_path)
-        cur = con.cursor()
-        cur.execute('ATTACH DATABASE ? AS lastfm_sim', (lastfm_db_path,))
-
-        word_tups = cur.execute('SELECT * FROM words;').fetchall()
-        self.__word_idxs = {}
-        for i, word_tup in enumerate(word_tups):
-            self.__word_idxs[word_tup[0]] = i
 
         print('Fetching data...')
-
-        self.__data = np.empty([])
-        self.__labels = np.empty([])
-
-        # create each example one by one
-        track_ids = cur.execute("""
-            SELECT DISTINCT(lyrics.track_id)
-            FROM lyrics
-            INNER JOIN lastfm_sim.similars_src
-            ON lyrics.track_id = lastfm_sim.similars_src.tid
-            WHERE lyrics.is_test = ?
+        examples = cur.execute("""
+            SELECT similars_src.score, src.histogram, dest.histogram, src.track_id, dest.track_id
+            FROM examples src, examples dest
+            JOIN similars_src
+            ON src.track_id = similars_src.src
+            AND dest.track_id = similars_src.dest
+            WHERE similars_src.is_test = ?
+            AND dest.histogram != '';
         """, (use_test,)).fetchall()
 
-        for i, track_id_tup in enumerate(track_ids):
-            track_id = track_id_tup[0]
-            print(f'Creating example for track {track_id}.', end="")
-            words = cur.execute("""
-                SELECT lyrics.word, lyrics.count
-                FROM lyrics
-                WHERE lyrics.is_test = ? AND
-                lyrics.track_id = ?;
-            """, (use_test, str(track_id),)).fetchall()
-            
-            example = np.zeros((NUM_WORDS*2))
-            for word, count in words:
-                example[self.__word_idxs[word]] = count
+        self.__data = np.zeros((len(examples), 10000))
+        self.__labels = np.empty(len(examples))
 
-            similars = cur.execute("""
-                SELECT lastfm_sim.similars_src.target
-                FROM lastfm_sim.similars_src
-                WHERE tid = ?
-            """, (track_id,)).fetchone()
-
-            similars_tokens = similars[0].split(',')
-
-            example_copy = np.copy(example)
-
-            print(f'Getting {len(similars_tokens)/2} similars for track {track_id}')
-            for i in range(0, len(similars_tokens), 2):
-                similar_id = similars_tokens[i]
-                similar_score = 1 if float(similars_tokens[i+1]) > .5 else 0
-                similar_words = cur.execute("""
-                    SELECT lyrics.word, lyrics.count
-                    FROM lyrics
-                    WHERE lyrics.track_id = ?;
-                """, (similar_id,)).fetchall()
-
-                for similar in similar_words:
-                    word, count = similar
-                    example[self.__word_idxs[word]+NUM_WORDS] = count
-                
-                self.__data = np.append(self.__data, example_copy)
-                self.__labels = np.append(self.__labels, similar_score)
-
-                np.save('./data_files/histogram_examples.npy', self.__data)
-                np.save('./data_files/histogram_labels.npy', self.__labels)
-
-        def __len__(self):
-            return len(self.__data)
-
-        def __getitem__(self, index):
-            return (torch.Tensor(self.__data[index]), self.__labels[index])
-                    
-
-class MusixMatchSqliteDataset(Dataset):
-    """
-    Deprecated. Filtered the musix match dataset depending on whether the id could be found in the last fm dataset.
-    """
-    def __init__(self, mxm_db_path: str, lastfm_db_path: str, filter_by_last_fm: bool, use_test: bool):
-        use_test = int(use_test)
-        con = sqlite3.connect(mxm_db_path)
-        cur = con.cursor()
-        if filter_by_last_fm:
-            cur.execute('ATTACH DATABASE ? AS lastfm_sim', (lastfm_db_path,))
-
-        self.__track_to_idx = {}
-        self.__idx_to_track = {}
-
-        if filter_by_last_fm:
-            cur.execute("""
-                SELECT DISTINCT track_id
-                FROM lyrics
-                WHERE is_test=?
-                    AND track_id in
-                        (SELECT tid FROM lastfm_sim.similars_src);
-            """, (use_test,))
-        else:
-             cur.execute("""
-                SELECT DISTINCT track_id
-                FROM lyrics
-                WHERE is_test=?
-            """, (use_test,))
-
-        track_id_tups = cur.fetchall()
-        
-        for i, track_id_tup in enumerate(track_id_tups):
-            self.__track_to_idx[track_id_tup[0]] = i
-            self.__idx_to_track[i] = track_id_tup[0]
-        
-        num_tracks = len(track_id_tups)
-
-        word_tups = cur.execute('SELECT * FROM words;').fetchall()
-        self.__word_idxs = {}
-        for i, word_tup in enumerate(word_tups):
-            self.__word_idxs[word_tup[0]] = i
-
-        if filter_by_last_fm:
-            cur.execute("""
-                SELECT *
-                FROM lyrics
-                WHERE is_test=?
-                    AND track_id in
-                        (SELECT tid FROM lastfm_sim.similars_src);
-            """, (use_test,))
-        else:
-            cur.execute("""
-                SELECT *
-                FROM lyrics
-                WHERE is_test=?
-            """, (use_test,))
-
-        rows = cur.fetchall()
-
-        self.data = np.zeros((num_tracks, len(self.__word_idxs.keys())))
-
-        for i, row in enumerate(rows):
-            if i % 1000 == 999:
-                # Writes these logs on one line
+        print('Loading data into numpy array...')
+        for i, example in enumerate(examples):
+            if i % 1000 == 0:
                 print('\r' + f'Loaded {i+1} word counts', end="")
-            track_id, _, word, count, _ = row
-            self.data[self.__track_to_idx[track_id]][self.__word_idxs[word]] = count
-        print('\r' + f'Loaded {i+1} word counts')
 
-        cur.close()
+            self.__labels[i] = example[0]
 
-    def get_words(self)-> List[str]:
-        return self.__word_idxs.keys()
+            src_counts = example[1].split(',')
+            for src_count in src_counts:
+                word_idx, count = src_count.split(':')
+                self.__data[i][int(word_idx)] = count
+
+            dest_counts = example[2].split(',')
+            for dest_count in dest_counts:
+                word_idx, count = dest_count.split(':')
+                self.__data[i][int(word_idx)+5000] = count
+
+        print('\r' + f'Loaded {len(examples)} word counts',)
 
     def __len__(self):
-        return len(self.data)
+        return len(self.__data)
 
     def __getitem__(self, index):
-        return (torch.Tensor(self.data[index]), self.__idx_to_track[index])
+        return (torch.Tensor(self.__data[index]), self.__labels[index])
 
 class MusixMatchCsvDataset(Dataset):
     """

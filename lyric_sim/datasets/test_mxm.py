@@ -5,41 +5,17 @@ class TestMxMLastfmJoinedDataset(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         super(TestMxMLastfmJoinedDataset, self).setUpClass()
-        self.dataset = MxMLastfmJoinedDataset('./data_files/mxm_dataset.db', './data_files/lastfm_similars.db', False, False)
+        self.dataset = MxMLastfmJoinedDataset('./test_files/mxm_lastfm.db', False)
 
     def test_getitem(self):
         input, label = self.dataset.__getitem__(0)
         self.assertEqual(input.shape[0], 10000)
-        self.assertEqual(label, 'TRAAAAV128F421A322')
+        self.assertEqual(label, 0.0491498)
     
     def test_getlen(self):
-        self.assertEqual(self.dataset.__len__(), 23)
-
-@unittest.skip("deprecated")
-class TestMxmSqliteDataset(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(self):
-        super(TestMxmSqliteDataset, self).setUpClass()
-        self.sqlite_dataset = MusixMatchSqliteDataset('./test_files/mxm_dataset.db', './test_files/lastfm_similars.db', False, False)
-
-    def test_num_words(self):
-        self.assertEqual(len(self.sqlite_dataset.get_words()), 5000)
-
-    def test_getitem(self):
-        input, label = self.sqlite_dataset.__getitem__(0)
-        self.assertEqual(input.shape[0], 5000)
-        self.assertEqual(label, 'TRAAAAV128F421A322')
-    
-    def test_getlen(self):
-        self.assertEqual(self.sqlite_dataset.__len__(), 23)
-    
-    def test_lyric_index(self):
-        input, _ = self.sqlite_dataset.__getitem__(0)
-        self.assertEqual(input[0], 6)
+        self.assertEqual(self.dataset.__len__(), 29)
 
 class TestMxmCsvDataset(unittest.TestCase):
-
     @classmethod
     def setUpClass(self):
         super(TestMxmCsvDataset, self).setUpClass()

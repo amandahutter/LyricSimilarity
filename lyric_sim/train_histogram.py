@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import WeightedRandomSampler
 import torch.optim as optim
 import torch.nn as nn
 from datasets.mxm import MxMLastfmJoinedDataset
@@ -21,7 +22,8 @@ num_examples = config['num_examples']
 
 print('Loading Musix Match training data...')
 trainset = MxMLastfmJoinedDataset(mxm_db, False, num_examples=num_examples)
-trainloader = DataLoader(trainset, N, shuffle=True, num_workers=num_workers)
+sampler = WeightedRandomSampler(trainset.get_sample_weights(), trainset.__len__())
+trainloader = DataLoader(trainset, N, num_workers=num_workers, sampler=sampler)
 
 NUM_WORDS = 5000
 

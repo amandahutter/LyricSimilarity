@@ -37,12 +37,18 @@ class MxMLastfmJoinedDataset(Dataset):
         self.__data = np.zeros((len(examples), 10000), dtype=np.int8)
         self.__labels = np.empty(len(examples), dtype=np.float32)
 
+        # figure out class counts so we can sample later
+        similar_count = 0
+
         print('Loading data into numpy array...')
         for i, example in enumerate(examples):
             if i % 10000 == 0:
                 print('\r' + f'Loaded {i} word counts', end="")
 
-            self.__labels[i] = int(example[0] >= 0.5)
+            # 1 if simialar 0 otherwise
+            is_similar = int(example[0] >= 0.5)
+            self.__labels[i] = is_similar
+            similar_count += is_similar
 
             src_counts = example[1].split(',')
             for src_count in src_counts:
@@ -56,11 +62,20 @@ class MxMLastfmJoinedDataset(Dataset):
 
         print('\r' + f'Loaded {len(examples)} word counts',)
 
+        weights = np.array([similar_count/num_examples, (num_examples-similar_count)/num_examples])
+
+        print(f'Will sample class <not similar> with {weights[0]} probability and <similar> with {weights[1]} probability')
+
+        self.__sample_weights = np.array([weights[int(t)] for t in self.__labels])
+
     def __len__(self):
         return len(self.__data)
 
     def __getitem__(self, index):
         return (torch.Tensor(self.__data[index]), self.__labels[index])
+
+    def get_sample_weights(self):
+        return self.__sample_weights
 
 class MusixMatchCsvDataset(Dataset):
     """

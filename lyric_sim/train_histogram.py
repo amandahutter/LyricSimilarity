@@ -1,79 +1,61 @@
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import WeightedRandomSampler
 import torch.optim as optim
 import torch.nn as nn
-from datasets.mxm import MusixMatchSqliteDataset
+from datasets.mxm import MxMLastfmJoinedDataset
 from utils import parse_args_and_config
-from adjacency_list.adjacency_list import AdjacencyList, SongNotFoundException
+
 from models.histogram import HistogramModel
 
 config = parse_args_and_config()
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f'Using device {device}')
+
 N = config['batch_size']
 
-# The batch size must be divisible by two, since we are splitting one batch using torch.split for src and dest nodes
-assert N % 2 == 0
-
 mxm_db = config['mxm_db']
-lastfm_db = config['lastfm_db']
 hidden_size = config['hidden_size']
-filter_tracks = config['filter_tracks']
 num_workers = config['num_workers']
+num_examples = config['num_examples']
 
 print('Loading Musix Match training data...')
-trainset = MusixMatchSqliteDataset(mxm_db, lastfm_db, filter_tracks, False)
-trainloader = DataLoader(trainset, N, shuffle=True, num_workers=num_workers, drop_last=True)
+trainset = MxMLastfmJoinedDataset(mxm_db, False, num_examples=num_examples)
+sampler = WeightedRandomSampler(trainset.get_sample_weights(), trainset.__len__())
+trainloader = DataLoader(trainset, N, num_workers=num_workers, sampler=sampler)
 
-print('Loading Musix Match testing data...')
-testset = MusixMatchSqliteDataset(mxm_db, lastfm_db, filter_tracks, True)
-testloader = DataLoader(trainset, N, shuffle=True, num_workers=num_workers, drop_last=True)
+NUM_WORDS = 5000
 
-print('Loading last fm adjacency list...')
-adjacency_list = AdjacencyList(lastfm_db, mxm_db, filter_tracks)
-
-num_words = len(trainset.get_words())
-
-model = HistogramModel(num_words, hidden_size)
+model = HistogramModel(NUM_WORDS*2, hidden_size)
+model.to(device)
 
 criterion = nn.MSELoss()
 
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-# we will split the batch into two parts, once for srcs one for dests
-N = int(N/2)
 
 for epoch in range(config['num_epochs']):
     print(f'Training epoch {epoch+1}')
 
     running_loss = 0.0
     for (i, batch) in enumerate(trainloader, 0):
-        inputs, labels = batch
-
-        srcInputs, destInputs = torch.split(inputs, N)
-
-        srcLabels = labels[:N]
-        destLabels = labels[N:]
+        inputs, labels = batch[0].to(device), batch[1].to(device)
 
         optimizer.zero_grad()
 
         # forward + backward + optimize
-        outputs = model(srcInputs, destInputs)
+        outputs = model(inputs)
 
-        # get similarities
-        targets = torch.zeros((N, 1))
-        for i in range(N):
-            targets[i] = adjacency_list.get_similarity(srcLabels[i], destLabels[i])
-
-        loss = criterion(outputs, targets)
+        loss = criterion(outputs.squeeze(), labels)
         loss.backward()
         optimizer.step()
 
         # print statistics
         running_loss += loss.item()
 
-        if i % 100000 + 1 == N: # for some reason i is always in multiples of 10 + N...
+        if i % 2000 == 0:
             print('[%d, %5d] loss: %.3f' % 
-                  (epoch + 1, i + 1, running_loss / 100000))
+                  (epoch, i, running_loss / 2000))
             running_loss = 0.0
 
 print('Finished Training')

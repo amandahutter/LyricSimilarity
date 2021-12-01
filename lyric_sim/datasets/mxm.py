@@ -1,3 +1,5 @@
+import os
+import time
 import torch
 from torch.utils.data import Dataset
 import re
@@ -5,84 +7,81 @@ import numpy as np
 import sqlite3
 from typing import List
 
-class MusixMatchSqliteDataset(Dataset):
-    def __init__(self, mxm_db_path: str, lastfm_db_path: str, filter_by_last_fm: bool, use_test: bool):
+NUM_WORDS = 5000
+
+class MxMLastfmJoinedDataset(Dataset):
+    """
+    Constructs a series of examples [1x10000] where the first 5000 words are the word counts for song 1, and the second 5000 are word counds for song two.
+    The labels are similarity score threshold between the two songs is_similar(s1, s2) >= .5 ? 1 : 0. Uses the similars_src table from lastfm only.
+    """
+
+    def __init__(self, mxm_lasfm_db_path, use_test: bool, num_examples=500000, similarity_threshold=0.5):
+
         use_test = int(use_test)
-        con = sqlite3.connect(mxm_db_path)
+
+        con = sqlite3.connect(mxm_lasfm_db_path)
         cur = con.cursor()
-        if filter_by_last_fm:
-            cur.execute('ATTACH DATABASE ? AS lastfm_sim', (lastfm_db_path,))
 
-        self.__track_to_idx = {}
-        self.__idx_to_track = {}
+        print('Fetching data...')
+        examples = cur.execute("""
+            SELECT similars_src.score, src.histogram, dest.histogram, src.track_id, dest.track_id
+            FROM examples src, examples dest
+            JOIN similars_src
+            ON src.track_id = similars_src.src
+            AND dest.track_id = similars_src.dest
+            WHERE similars_src.is_test = ?
+            AND dest.histogram != ''
+            LIMIT ?;
+        """, (use_test, num_examples,)).fetchall()
 
-        if filter_by_last_fm:
-            cur.execute("""
-                SELECT DISTINCT track_id
-                FROM lyrics
-                WHERE is_test=?
-                    AND track_id in
-                        (SELECT tid FROM lastfm_sim.similars_src);
-            """, (use_test,))
-        else:
-             cur.execute("""
-                SELECT DISTINCT track_id
-                FROM lyrics
-                WHERE is_test=?
-            """, (use_test,))
+        self.__data = np.zeros((len(examples), 10000), dtype=np.int8)
+        self.__labels = np.empty(len(examples), dtype=np.float32)
 
-        track_id_tups = cur.fetchall()
-        
-        for i, track_id_tup in enumerate(track_id_tups):
-            self.__track_to_idx[track_id_tup[0]] = i
-            self.__idx_to_track[i] = track_id_tup[0]
-        
-        num_tracks = len(track_id_tups)
+        # figure out class counts so we can sample later
+        similar_count = 0
 
-        word_tups = cur.execute('SELECT * FROM words;').fetchall()
-        self.__word_idxs = {}
-        for i, word_tup in enumerate(word_tups):
-            self.__word_idxs[word_tup[0]] = i
+        print('Loading data into numpy array...')
+        for i, example in enumerate(examples):
+            if i % 10000 == 0:
+                print('\r' + f'Loaded {i} word counts', end="")
 
-        if filter_by_last_fm:
-            cur.execute("""
-                SELECT *
-                FROM lyrics
-                WHERE is_test=?
-                    AND track_id in
-                        (SELECT tid FROM lastfm_sim.similars_src);
-            """, (use_test,))
-        else:
-            cur.execute("""
-                SELECT *
-                FROM lyrics
-                WHERE is_test=?
-            """, (use_test,))
+            # 1 if simialar 0 otherwise
+            is_similar = int(example[0] >= 0.5)
+            self.__labels[i] = is_similar
+            similar_count += is_similar
 
-        rows = cur.fetchall()
+            src_counts = example[1].split(',')
+            for src_count in src_counts:
+                word_idx, count = src_count.split(':')
+                self.__data[i][int(word_idx)] = count
 
-        self.data = np.zeros((num_tracks, len(self.__word_idxs.keys())))
+            dest_counts = example[2].split(',')
+            for dest_count in dest_counts:
+                word_idx, count = dest_count.split(':')
+                self.__data[i][int(word_idx)+5000] = count
 
-        for i, row in enumerate(rows):
-            if i % 1000 == 999:
-                # Writes these logs on one line
-                print('\r' + f'Loaded {i+1} word counts', end="")
-            track_id, _, word, count, _ = row
-            self.data[self.__track_to_idx[track_id]][self.__word_idxs[word]] = count
-        print('\r' + f'Loaded {i+1} word counts')
+        print('\r' + f'Loaded {len(examples)} word counts',)
 
-        cur.close()
+        weights = np.array([similar_count/num_examples, (num_examples-similar_count)/num_examples])
 
-    def get_words(self)-> List[str]:
-        return self.__word_idxs.keys()
+        print(f'Will sample class <not similar> with {weights[0]} probability and <similar> with {weights[1]} probability')
+
+        self.__sample_weights = np.array([weights[int(t)] for t in self.__labels])
 
     def __len__(self):
-        return len(self.data)
+        return len(self.__data)
 
     def __getitem__(self, index):
-        return (torch.Tensor(self.data[index]), self.__idx_to_track[index])
+        return (torch.Tensor(self.__data[index]), self.__labels[index])
+
+    def get_sample_weights(self):
+        return self.__sample_weights
 
 class MusixMatchCsvDataset(Dataset):
+    """
+    Exposes the musix match word count data as a list of tensors 1x5000 where the 5000 columns are each attributed to a word in the words list.
+    e.g. [4, 2, 0, 0, 3, 1, ... , 0, 0, 1, 0, 0]
+    """
     def __init__(self, filepath):
         self.__idx_to_mxmid = {}
         with open(filepath) as inputfile:

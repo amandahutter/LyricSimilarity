@@ -1,20 +1,19 @@
 import unittest
-from lyric_sim.datasets.mxm import MusixMatchSqliteDataset
+from lyric_sim.datasets.mxm import MxMLastfmJoinedDataset
 from lyric_sim.models.histogram import HistogramModel
 import torch
 
-dataset = MusixMatchSqliteDataset('./test_files/mxm_dataset.db', '', False, False)
+dataset = MxMLastfmJoinedDataset('./test_files/mxm_lastfm.db', False)
 class TestMxmHistogram(unittest.TestCase):
 
     def test_forward(self):
-        src, _ = dataset.__getitem__(0)
-        dest, _ = dataset.__getitem__(1)
+        example, _ = dataset.__getitem__(0)
         
         # convert inputs into batches of size N=1
-        src = torch.unsqueeze(src, 0)
-        dest = torch.unsqueeze(dest, 0)
-        model = HistogramModel(len(dataset.get_words()), 8192)
-        y = model.forward(src, dest)
+        example = torch.unsqueeze(example, 0)
+
+        model = HistogramModel(10000, 8192)
+        y = model.forward(example)
         self.assertEqual(len(y), 1)
 
 

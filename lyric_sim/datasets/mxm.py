@@ -15,7 +15,7 @@ class MxMLastfmJoinedDataset(Dataset):
     The labels are similarity score threshold between the two songs is_similar(s1, s2) >= .5 ? 1 : 0. Uses the similars_src table from lastfm only.
     """
 
-    def __init__(self, mxm_lasfm_db_path, use_test: bool):
+    def __init__(self, mxm_lasfm_db_path, use_test: bool, similarity_threshold=0.5):
 
         use_test = int(use_test)
 
@@ -34,14 +34,14 @@ class MxMLastfmJoinedDataset(Dataset):
         """, (use_test,)).fetchall()
 
         self.__data = np.zeros((len(examples), 10000))
-        self.__labels = np.empty(len(examples))
+        self.__labels = np.empty(len(examples), dtype=np.float32)
 
         print('Loading data into numpy array...')
         for i, example in enumerate(examples):
             if i % 1000 == 0:
                 print('\r' + f'Loaded {i+1} word counts', end="")
 
-            self.__labels[i] = example[0]
+            self.__labels[i] = 1 if example[0] >= 0.5 else 0
 
             src_counts = example[1].split(',')
             for src_count in src_counts:

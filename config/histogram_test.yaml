@@ -1,9 +1,6 @@
 ---
-  batch_size: 4
-  num_epochs: 10
+  batch_size: 8
+  num_epochs: 12
   num_workers: 0
   hidden_size: 512
-  mxm_db: './test_files/mxm_dataset.db'
-  lastfm_db: './test_files/lastfm_similars.db'
-  filter_tracks: False
-  
+  mxm_db: './test_files/mxm_lastfm.db'

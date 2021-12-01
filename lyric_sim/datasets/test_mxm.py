@@ -1,5 +1,5 @@
 import unittest
-from lyric_sim.datasets.mxm import MusixMatchCsvDataset, MusixMatchSqliteDataset, MxMLastfmJoinedDataset
+from lyric_sim.datasets.mxm import MusixMatchCsvDataset, MxMLastfmJoinedDataset
 
 class TestMxMLastfmJoinedDataset(unittest.TestCase):
     @classmethod
@@ -10,7 +10,7 @@ class TestMxMLastfmJoinedDataset(unittest.TestCase):
     def test_getitem(self):
         input, label = self.dataset.__getitem__(0)
         self.assertEqual(input.shape[0], 10000)
-        self.assertEqual(label, 0.0491498)
+        self.assertEqual(label, 0)
     
     def test_getlen(self):
         self.assertEqual(self.dataset.__len__(), 29)

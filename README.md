@@ -9,10 +9,20 @@
 
 `pip3 install -f requirements.txt`
 
+- If you prefer Anaconda package management:
+
+`conda env create -f environment.yaml`
+
+`conda activate -f lyric_sim`
+
+
 # Adding a dependency
 `pip3 install <dependency>`
 
 `pip3 freeze > requirements.txt`
+
+- Anaconda install dependency 
+`conda install <dependency>`
 
 # .gitignore
 - please add any platform specific files like .DS_Store or .vscode to the .gitignore

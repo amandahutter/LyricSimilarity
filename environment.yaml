@@ -1,0 +1,24 @@
+name: lyric_sim
+channels:
+  - defaults
+dependencies:
+  - certifi==2021.10.8
+  - dataclasses==0.8
+  - idna==3.3
+  - munch==2.5.0
+  - pandas==1.1.5
+  - python-dateutil==2.8.2
+  - pytz==2021.3
+  - PyYAML==6.0
+  - requests==2.26.0
+  - six==1.16.0
+  - tqdm==4.62.3
+  - typing-extensions==3.10.0.2
+  - urllib3==1.26.7
+  - pip:
+    - python==3.6
+    - torchtext==0.11.0
+    - numpy==1.19.5
+    - swagger-client==1.0.0
+    - torch==1.10.0
+    - charset-normalizer==2.0.7

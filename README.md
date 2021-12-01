@@ -13,7 +13,7 @@
 
 `conda env create -f environment.yaml`
 
-`conda activate -f lyric_sim`
+`conda activate lyric_sim`
 
 
 # Adding a dependency
@@ -22,6 +22,7 @@
 `pip3 freeze > requirements.txt`
 
 - Anaconda install dependency 
+
 `conda install <dependency>`
 
 # .gitignore

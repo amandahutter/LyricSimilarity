@@ -41,10 +41,10 @@ with torch.no_grad():
         outputs = model(input)
 
         outputs = outputs.squeeze()
-        N = labels.size(0)
-        total += N
+        n = labels.size(0)
+        total += n
         # Round the outputs to 0 or 1.
-        for i in range(N):
+        for i in range(n):
             correct += int(torch.round(outputs[i]) == labels[i])
 
 print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')

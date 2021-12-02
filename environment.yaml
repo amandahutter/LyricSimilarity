@@ -19,6 +19,6 @@ dependencies:
     - python==3.6
     - torchtext==0.11.0
     - numpy==1.19.5
-    - swagger-client==1.0.0
+    #- swagger-client==1.0.0
     - torch==1.10.0
     - charset-normalizer==2.0.7

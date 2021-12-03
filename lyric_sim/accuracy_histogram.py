@@ -27,7 +27,7 @@ testloader = DataLoader(testset, N, num_workers=num_workers, sampler=sampler)
 
 NUM_WORDS = 5000
 
-MODEL_PATH = f'./data_files/{config["config_name"]}.pth'
+MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
 
 model = HistogramModel(NUM_WORDS*2, hidden_size)
 model.load_state_dict(torch.load(MODEL_PATH))

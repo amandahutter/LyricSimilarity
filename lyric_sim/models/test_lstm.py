@@ -3,9 +3,11 @@ from lyric_sim.models.lstm import LSTM
 import torch 
 import numpy as np 
 
+
 class TestLyricsLSTM(unittest.TestCase):
 
     def test_forward(self):
+        
 
         vocab_size = 1000
         song1 = torch.randint(low = 0, high = vocab_size, size = (1,20))

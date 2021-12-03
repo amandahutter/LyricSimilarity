@@ -25,7 +25,7 @@ class LyricsSqliteDataset(Dataset):
                  FROM lyrics A 
                  JOIN (SELECT DISTINCT track_id AS tid, mxm_tid AS mxm_id, is_test FROM mxm.lyrics) B 
                  ON A.mxm_id = B.mxm_id
-                 WHERE lyrics <> "" AND B.is_test = 0'''
+                 WHERE lyrics <> "" AND B.is_test = {}'''.format(use_test)
         df = pd.read_sql_query(qry, con)
 
         self.__idx_to_track = df[['tid']].to_dict(orient='dict')['tid']
@@ -61,7 +61,7 @@ class LyricsSqliteDataset(Dataset):
                  JOIN lyrics CC ON BB.mxm_id = CC.mxm_id'''
         df_sim_all = pd.read_sql_query(qry, con)
         
-        # merge in ids to similarity data
+        # merge in ids to similarity data (will cut out remaining records we won't use)
         df_sim_all = df_sim_all.merge(df_ids, how='left', left_on='src', right_on='tid')
         df_sim_all = df_sim_all.rename(columns={'index': 'src_id'})
         df_sim_all = df_sim_all.merge(df_ids, how='left', left_on='dest', right_on='tid')

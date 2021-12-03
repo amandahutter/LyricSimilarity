@@ -16,30 +16,17 @@ class LyricsSqliteDataset(Dataset):
         
         # establish connection to lyrics
         con = sqlite3.connect(lyrics_db_path)
-        
-        # establish the other connections we need
-        con_mxm = sqlite3.connect(mxm_db_path)
-        con_lastfm = sqlite3.connect(lastfm_db_path)
+        cur = con.cursor()
+        cur.execute('ATTACH DATABASE ? AS lastfm', (lastfm_db_path,))
+        cur.execute('ATTACH DATABASE ? AS mxm', (mxm_db_path,))
 
         # read in lyrics
-        qry = "SELECT * FROM lyrics WHERE lyrics <> ''"
+        qry = '''SELECT B.tid, A.mxm_id, A.lyrics_id, A.lyrics, A.explicit, B.is_test
+                 FROM lyrics A 
+                 JOIN (SELECT DISTINCT track_id AS tid, mxm_tid AS mxm_id, is_test FROM mxm.lyrics) B 
+                 ON A.mxm_id = B.mxm_id
+                 WHERE lyrics <> "" AND B.is_test = 0'''
         df = pd.read_sql_query(qry, con)
-
-        # read in mxm (ids only)
-        qry = 'SELECT DISTINCT track_id AS tid, mxm_tid AS mxm_id FROM lyrics WHERE is_test = {}'.format(use_test)
-        df_mxm_ids = pd.read_sql_query(qry, con_mxm)
-
-        # similarity score (from lastfm)
-        qry = 'SELECT src, dest, score, is_test FROM similars_src WHERE is_test = {}'.format(use_test)
-        df_sim_all = pd.read_sql_query(qry, con_lastfm)
-
-        # close connections
-        con.close()
-        con_mxm.close()
-        con_lastfm.close()
-
-        # join ids in to lyrics data 
-        df = df.merge(df_mxm_ids, how='inner', on='mxm_id')
 
         self.__idx_to_track = df[['tid']].to_dict(orient='dict')['tid']
              
@@ -65,6 +52,15 @@ class LyricsSqliteDataset(Dataset):
         self.vocab = vocab
         self.data = [torch.tensor(vocab(tokenizer(item)), dtype=torch.long) for item in df['lyrics']]
         
+        # similarity score (from lastfm)
+        qry = '''SELECT A.*
+                 FROM lastfm.similars_src A
+                 JOIN (SELECT DISTINCT track_id AS tid, mxm_tid AS mxm_id FROM mxm.lyrics) B ON A.src = B.tid
+                 JOIN (SELECT DISTINCT track_id AS tid, mxm_tid AS mxm_id FROM mxm.lyrics) BB ON A.dest = BB.tid
+                 JOIN lyrics C ON B.mxm_id = C.mxm_id
+                 JOIN lyrics CC ON BB.mxm_id = CC.mxm_id'''
+        df_sim_all = pd.read_sql_query(qry, con)
+        
         # merge in ids to similarity data
         df_sim_all = df_sim_all.merge(df_ids, how='left', left_on='src', right_on='tid')
         df_sim_all = df_sim_all.rename(columns={'index': 'src_id'})
@@ -85,7 +81,10 @@ class LyricsSqliteDataset(Dataset):
         df_sim_no = df_sim_lyrics[df_sim_lyrics['similar'] == 0].sample(n=df_sim_yes.shape[0], replace=False, random_state=42)
 
         self.df_sim = pd.concat([df_sim_yes, df_sim_no], axis=0, ignore_index=True)
-
+        
+        # close connections
+        cur.close()
+        con.close()
         
     def __len__(self):
         return self.df_sim.shape[0]

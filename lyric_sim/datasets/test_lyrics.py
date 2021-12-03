@@ -1,5 +1,5 @@
 import unittest
-from lyric_sim.datasets.mxm import LyricsSqliteDataset
+from lyric_sim.datasets.lyrics import LyricsSqliteDataset
 
 lyrics_db_path = '../test_files/mxm_lyrics.db'
 mxm_db_path = '../test_files/mxm_dataset.db'

@@ -25,17 +25,13 @@ class LSTM(nn.Module):
         self.lstm = nn.LSTM(emb_size, hidden_size, batch_first = True)
 
         # Variable size of Fully Connected Layer, dependent on Combination Unit 
-        #if combo_unit == 'ADD':
-        if combo_unit == CombinationType.ADD.name:
+        if combo_unit == CombinationType.ADD:
             self.multiplier = 2
-        #elif combo_unit == 'SUB':
-        elif combo_unit == CombinationType.SUB.name:
+        elif combo_unit == CombinationType.SUB:
             self.multiplier = 1
-        #elif combo_unit == 'MULT':
-        elif combo_unit == CombinationType.MULT.name:
+        elif combo_unit == CombinationType.MULT:
             self.multiplier = 1
-        #elif combo_unit == 'ALL':
-        elif combo_unit == CombinationType.ALL.name:
+        elif combo_unit == CombinationType.ALL:
             self.multiplier = 4
         else: 
             print("Invalid input received")
@@ -59,58 +55,34 @@ class LSTM(nn.Module):
         dropped = self.dropout(embedded)
         h_n = torch.zeros(N, 1, self.hidden_size)
         c_n = torch.zeros(N, 1, self.hidden_size)
-        outputs, (h_n, c_n) = self.lstm(dropped, (h_n, c_n))
+        _, (h_n, c_n) = self.lstm(dropped, (h_n, c_n))
         h_n = self.dropout(h_n)
-        
-        '''#print("song shape:", song.shape)
-        song = song.unsqueeze(dim = 0)
-        #print("song shape:", song.shape)
-        N, T, _ = song.shape
-        h_n = torch.zeros(N, 1, self.hidden_size)
-        c_n = torch.zeros(N, 1, self.hidden_size)
-        for t in range(0, T):
-            #word =  song[:, t, :]
-            word =  song[:, t]
-            #print("word", word.shape)
-            embedded = self.embedding(word)
-            #print("embedded:", embedded.shape)
-            dropped = self.dropout(embedded)
-            #print("dropped:", dropped.shape)
-            #dropped = dropped.unsqueeze(dim = 0)
-            outputs, (h_n, c_n) = self.lstm(dropped, (h_n, c_n))
-            h_n = self.dropout(h_n)'''
-            
+                    
         return h_n 
 
     def forward(self, input1, input2):
         
         self.h_f_1 = self.network(input1)
         self.h_f_2 = self.network(input2)
-        #print("hf1",self.h_f_1.shape)
-        #print("hf2",self.h_f_1.shape)
         
         # Combine these hidden layers together 
         # if ADD, shape is 2*dh 
-        #if self.combo_unit == 'ADD': 
-        if self.combo_unit == CombinationType.ADD.name:
+        if self.combo_unit == CombinationType.ADD:
             self.h_f = torch.cat((self.h_f_1, self.h_f_2), dim = 2)
         # if SUB, shape is dh
-        #elif self.combo_unit == 'SUB':
-        elif self.combo_unit == CombinationType.SUB.name:
+        elif self.combo_unit == CombinationType.SUB:
             self.h_f = torch.sub(self.h_f_1, self.h_f_2)
         # if MULT, shape is dh 
-        #elif self.combo_unit == 'MULT': 
-        elif self.combo_unit == CombinationType.MULT.name:
+        elif self.combo_unit == CombinationType.MULT:
             self.h_f = torch.mul(self.h_f_1, self.h_f_2)
         # if All, shape is 4*dh 
-        #elif self.combo_unit == 'ALL':
-        elif self.combo_unit == CombinationType.ALL.name:
+        elif self.combo_unit == CombinationType.ALL:
             add = torch.cat((self.h_f_1, self.h_f_2), dim = 2)
             sub = torch.sub(self.h_f_1, self.h_f_2)
             mult = torch.mul(self.h_f_1, self.h_f_2)
             self.h_f = torch.cat((add,sub,mult), dim = 2)
         else: 
-            print("Invalid input")
+            print("Invalid combination argument. Defaulting to all.")
             add = torch.cat((self.h_f_1, self.h_f_2), dim = 2)
             sub = torch.sub(self.h_f_1, self.h_f_2)
             mult = torch.mul(self.h_f_1, self.h_f_2)

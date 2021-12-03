@@ -3,7 +3,7 @@ from lyric_sim.datasets.lyrics import LyricsSqliteDataset
 
 lyrics_db_path = '../test_files/mxm_lyrics.db'
 mxm_db_path = '../test_files/mxm_dataset.db'
-lastfm_db_path = '../test_files/lastfm_similars.db'
+lastfm_db_path = '../test_files/mxm_lastfm.db'
 
 dataset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True)
 

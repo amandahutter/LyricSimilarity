@@ -1,0 +1,13 @@
+---
+  batch_size: 64
+  num_epochs: 10
+  num_workers: 0
+  input_size: 1
+  emb_size: 20
+  hidden_size: 10
+  dropout: 0.90
+  num_fc: 1
+  combo_unit: 'ADD'
+
+
+

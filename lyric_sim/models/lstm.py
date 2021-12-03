@@ -10,7 +10,7 @@ class CombinationType(Enum):
   ALL = 4
 
 class LSTM(nn.Module):
-    def __init__(self, input_size, emb_size=20, hidden_size=10, dropout=0.90, num_fc = 1, combo_unit = 'MULT'):
+    def __init__(self, input_size, emb_size=20, hidden_size=10, dropout=0.90, num_fc=1, combo_unit=CombinationType.MULT):
         super(LSTM, self).__init__()
 
         self.input_size = input_size
@@ -34,7 +34,7 @@ class LSTM(nn.Module):
         elif combo_unit == CombinationType.ALL:
             self.multiplier = 4
         else: 
-            print("Invalid input received")
+            print("Invalid combination argument. Defaulting to all.")
             self.multiplier = 4 
         self.hidden_mult = self.multiplier * self.hidden_size
 
@@ -88,7 +88,7 @@ class LSTM(nn.Module):
             mult = torch.mul(self.h_f_1, self.h_f_2)
             self.h_f = torch.cat((add,sub,mult), dim = 2)
 
-        print("h_f shape:",self.h_f.shape)
+        print("h_f shape: ",self.h_f.shape)
 
         # Fully Connected Layers 
         if self.num_fc == 1:

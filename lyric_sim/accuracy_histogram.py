@@ -34,6 +34,11 @@ model.load_state_dict(torch.load(MODEL_PATH))
 
 correct = 0
 total = 0
+TP = 0
+FP = 0 
+TN = 0 
+FN = 0 
+other = 0 
 # since we're not training, we don't need to calculate the gradients for our outputs
 with torch.no_grad():
     for data in testloader:
@@ -47,4 +52,25 @@ with torch.no_grad():
         for i in range(n):
             correct += int(torch.round(outputs[i]) == labels[i])
 
+            if ((int(torch.round(outputs[i])) == 1)  & (int(torch.round(labels[i])) == 1)):
+                TP += 1 
+            elif ((int(torch.round(outputs[i])) == 0)  & (int(torch.round(labels[i])) == 0)):
+                TN += 1 
+            elif ((int(torch.round(outputs[i])) == 1)  & (int(torch.round(labels[i])) == 0)):
+                FP += 1
+            elif ((int(torch.round(outputs[i])) == 0)  & (int(torch.round(labels[i])) == 1)):
+                FN += 1 
+            else: 
+                other += 1 
+
 print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')
+
+print(f'Precision (Positive Preditive Value) on {total} test examples: {100 * TP/(TP + FP)}%')
+print(f'Recall (True Positive Rate) on {total} test examples: {100 * TP/(TP + FN)}%')
+print(f'Negative Preditive Value on {total} test examples: {100 * TN/(TN + FN)}%')
+print(f'Specificity (True Negative Rate) on {total} test examples: {100 * TN/(TN + FP)}%')
+
+print(f'True Positive Amount on {total} test examples: {100 * TP/(total)}%')
+print(f'False Positive Amount on {total} test examples: {100 * FP/(total)}%')
+print(f'True Negative Amount on {total} test examples: {100 * TN/(total)}%')
+print(f'False Negative Amount on {total} test examples: {100 * FN/(total)}%')

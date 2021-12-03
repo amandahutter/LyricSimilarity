@@ -58,5 +58,9 @@ for epoch in range(config['num_epochs']):
                   (epoch, i, running_loss / 2000))
             running_loss = 0.0
 
+MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
+
+print(f'Saving model to {MODEL_PATH}')
+torch.save(model.state_dict(), MODEL_PATH)
 print('Finished Training')
 

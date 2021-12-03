@@ -74,3 +74,7 @@ print(f'True Positive Amount on {total} test examples: {100 * TP/(total)}%')
 print(f'False Positive Amount on {total} test examples: {100 * FP/(total)}%')
 print(f'True Negative Amount on {total} test examples: {100 * TN/(total)}%')
 print(f'False Negative Amount on {total} test examples: {100 * FN/(total)}%')
+
+print(f'Predicted Positive Portion on {total} test examples: {100 * (FP + TP)/(total)}%')
+print(f'Predicted Negative Portion on {total} test examples: {100 * (FN + TN)/(total)}%')
+

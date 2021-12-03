@@ -1,13 +1,11 @@
 import unittest
 from lyric_sim.datasets.mxm import LyricsSqliteDataset
 
-lyrics_db_path = '../data_files/mxm_lyrics.db'
-mxm_db_path = '../data_files/mxm_dataset.db'
-lastfm_db_path = '../data_files/lastfm_similars.db'
-#sim_csv_path = '../data_files/Similarity_df.csv'
-sim_csv_path = '../data_files/Similarity_df_mini.csv' #sampled similarity df
+lyrics_db_path = '../test_files/mxm_lyrics.db'
+mxm_db_path = '../test_files/mxm_dataset.db'
+lastfm_db_path = '../test_files/lastfm_similars.db'
 
-dataset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, sim_csv_path, False, False)
+dataset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True)
 
 class TestLyricsSqliteDataset(unittest.TestCase):
 

@@ -50,19 +50,15 @@ with torch.no_grad():
         total += n
         # Round the outputs to 0 or 1.
         for i in range(n):
-            correct += int(torch.round(outputs[i]) == labels[i])
+            label_pred = int(torch.round(outputs[i]))
+            label = labels[i]
 
-            if ((int(torch.round(outputs[i])) == 1)  & (int(torch.round(labels[i])) == 1)):
-                TP += 1 
-            elif ((int(torch.round(outputs[i])) == 0)  & (int(torch.round(labels[i])) == 0)):
-                TN += 1 
-            elif ((int(torch.round(outputs[i])) == 1)  & (int(torch.round(labels[i])) == 0)):
-                FP += 1
-            elif ((int(torch.round(outputs[i])) == 0)  & (int(torch.round(labels[i])) == 1)):
-                FN += 1 
-            else: 
-                other += 1 
+            TP += (label_pred == 1) & (label == 1)
+            TN += (label_pred == 0) & (label == 0)
+            FP += (label_pred == 1) & (label == 0)
+            FN += (label_pred == 0) & (label == 1)
 
+correct = TP + TN
 print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')
 
 print(f'Precision (Positive Preditive Value) on {total} test examples: {100 * TP/(TP + FP)}%')

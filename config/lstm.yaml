@@ -1,4 +1,4 @@
-  ---
+---
   lyrics_db_path: './data_files/mxm_lyrics.db'
   mxm_db_path: './data_files/mxm_dataset.db'
   lastfm_db_path: './data_files/mxm_lastfm.db'

@@ -31,6 +31,8 @@ testloader = DataLoader(testset, N, num_workers=num_workers)
 
 # Moved from above
 input_size = len(testset.vocab())
+print("input size:", input_size)
+print(testset.vocab())
 
 MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
 

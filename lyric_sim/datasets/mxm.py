@@ -59,7 +59,8 @@ class MxMLastfmJoinedDataset(Dataset):
 
         print('\r' + f'Loaded {len(examples)} word counts',)
 
-        weights = np.array([0.1, 1])
+        #weights = np.array([0.1, 1])
+        weights = np.array([similar_count/num_examples, (num_examples-similar_count)/num_examples])
 
         print(f'Will sample class <not similar> with {weights[0]} probability and <similar> with {weights[1]} probability')
 

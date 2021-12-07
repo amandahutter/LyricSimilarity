@@ -41,7 +41,7 @@ class LSTM(nn.Module):
         self.fc_first =  nn.Linear(self.hidden_mult, self.hidden_mult)
         self.relu = nn.ReLU()
         self.fc_final = nn.Linear(self.hidden_mult, 2)
-        self.softmax = nn.Softmax(dim = 1)
+        #self.softmax = nn.Softmax(dim = 1)
         # Should there be CrossEntropyLoss here, instead of softmax? 
 
         self.h_f_1 = None 
@@ -53,8 +53,8 @@ class LSTM(nn.Module):
         N, T = song.shape
         embedded = self.embedding(song)
         dropped = self.dropout(embedded)
-        h_n = torch.zeros(N, 1, self.hidden_size)
-        c_n = torch.zeros(N, 1, self.hidden_size)
+        #h_n = torch.zeros(N, 1, self.hidden_size)
+        #c_n = torch.zeros(N, 1, self.hidden_size)
         _, (h_n, c_n) = self.lstm(dropped, (h_n, c_n))
         h_n = self.dropout(h_n)
                     
@@ -99,6 +99,7 @@ class LSTM(nn.Module):
             self.h_f = self.relu(self.h_f)
             self.h_f = self.fc_final(self.h_f)
     
-        output = self.softmax(self.h_f)
+        #output = self.softmax(self.h_f)
+        output = self.h_f
 
         return output 

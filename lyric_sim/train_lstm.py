@@ -1,9 +1,8 @@
 import torch
 from torch.utils.data import DataLoader
-# from torch.utils.data.sampler import WeightedRandomSampler
 import torch.optim as optim
 import torch.nn as nn
-from datasets.mxm import Something
+from datasets.lyrics import LyricsSqliteDataset
 from utils import parse_args_and_config
 
 from models.lstm import LSTM, CombinationType
@@ -13,8 +12,11 @@ config = parse_args_and_config()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using device {device}')
 
+lyrics_db_path = config['lyrics_db_path']
+mxm_db_path = config['mxm_db_path']
+lastfm_db_path = config['lastfm_db_path']
 N = config['batch_size']
-input_size = config['input_size']
+input_size = len(trainset.vocab())
 emb_size = config['emb_size']
 hidden_size = config['hidden_size']
 dropout = config['dropout']
@@ -22,29 +24,39 @@ num_fc = config['num_fc']
 combo_unit = CombinationType(config['combo_unit'])
 num_workers = config['num_workers']
 
-print('Loading Musix Match training data...')
-# trainset = MxMLastfmJoinedDataset(mxm_db, False, num_examples=num_examples)
-# sampler = WeightedRandomSampler(trainset.get_sample_weights(), trainset.__len__())
-# trainloader = DataLoader(trainset, N, num_workers=num_workers, sampler=sampler)
+print('Loading Lyrics training data...')
+trainset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True)
+trainloader = DataLoader(trainset, N, num_workers=num_workers)
 
-# NUM_WORDS = 5000
+MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
 
 model = LSTM(input_size, emb_size, hidden_size, dropout, num_fc, combo_unit)
 model.to(device)
 
+criterion = nn.CrossEntropyLoss()
+
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+def save_model(model):
+    print(f'Saving model to {MODEL_PATH}')
+    torch.save(model.state_dict(), MODEL_PATH)
+    print('Finished Training')
 
 for epoch in range(config['num_epochs']):
     print(f'Training epoch {epoch+1}')
 
     running_loss = 0.0
+    running_count = 0
     for (i, batch) in enumerate(trainloader, 0):
-        inputs, labels = batch[0].to(device), batch[1].to(device)
+        inputs, labels = (batch[0][0].to(device), batch[0][1].to(device)), batch[1].to(device)
+        
+        _, counts = labels.unique(sorted = True, return_counts = True)
+        #print('Percent positive class in batch: ', counts[1] / counts.sum())
 
         optimizer.zero_grad()
 
         # forward + backward + optimize
-        outputs = model(inputs)
+        outputs = model(inputs[0], inputs[1])
 
         loss = criterion(outputs.squeeze(), labels)
         loss.backward()
@@ -52,11 +64,13 @@ for epoch in range(config['num_epochs']):
 
         # print statistics
         running_loss += loss.item()
+        running_count += 1
 
-        if i % 2000 == 0:
-            print('[%d, %5d] loss: %.3f' % 
-                  (epoch, i, running_loss / 2000))
-            running_loss = 0.0
+        if i % 1000 == 0: 
+            print('[%d, %d] loss: %.3f' % 
+                  (epoch, running_count, running_loss / running_count))
 
 print('Finished Training')
+
+save_model(model)
 

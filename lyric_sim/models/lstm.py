@@ -53,9 +53,7 @@ class LSTM(nn.Module):
         N, T = song.shape
         embedded = self.embedding(song)
         dropped = self.dropout(embedded)
-        #h_n = torch.zeros(N, 1, self.hidden_size)
-        #c_n = torch.zeros(N, 1, self.hidden_size)
-        _, (h_n, c_n) = self.lstm(dropped, (h_n, c_n))
+        _, (h_n, c_n) = self.lstm(dropped)
         h_n = self.dropout(h_n)
                     
         return h_n 
@@ -87,8 +85,6 @@ class LSTM(nn.Module):
             sub = torch.sub(self.h_f_1, self.h_f_2)
             mult = torch.mul(self.h_f_1, self.h_f_2)
             self.h_f = torch.cat((add,sub,mult), dim = 2)
-
-        print("h_f shape: ",self.h_f.shape)
 
         # Fully Connected Layers 
         if self.num_fc == 1:

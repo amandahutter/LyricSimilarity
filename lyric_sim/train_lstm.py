@@ -16,7 +16,6 @@ lyrics_db_path = config['lyrics_db_path']
 mxm_db_path = config['mxm_db_path']
 lastfm_db_path = config['lastfm_db_path']
 N = config['batch_size']
-input_size = len(trainset.vocab())
 emb_size = config['emb_size']
 hidden_size = config['hidden_size']
 dropout = config['dropout']
@@ -28,7 +27,9 @@ print('Loading Lyrics training data...')
 trainset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True)
 trainloader = DataLoader(trainset, N, num_workers=num_workers)
 
-MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
+MODEL_PATH = f'./saved_models/{config["model_name"]}.pth'
+
+input_size = len(trainset.vocab)
 
 model = LSTM(input_size, emb_size, hidden_size, dropout, num_fc, combo_unit)
 model.to(device)

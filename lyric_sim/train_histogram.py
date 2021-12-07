@@ -1,3 +1,5 @@
+import signal
+import sys
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
@@ -26,6 +28,7 @@ sampler = WeightedRandomSampler(trainset.get_sample_weights(), trainset.__len__(
 trainloader = DataLoader(trainset, N, num_workers=num_workers, sampler=sampler)
 
 NUM_WORDS = 5000
+MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
 
 model = HistogramModel(NUM_WORDS*2, hidden_size)
 model.to(device)
@@ -33,6 +36,18 @@ model.to(device)
 criterion = nn.MSELoss()
 
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+def save_model(model):
+    print(f'Saving model to {MODEL_PATH}')
+    torch.save(model.state_dict(), MODEL_PATH)
+    print('Finished Training')
+
+def sigint_handler(sig, frame):
+    print('Trapped SIGINT')
+    save_model(model)
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, sigint_handler)
 
 for epoch in range(config['num_epochs']):
     print(f'Training epoch {epoch+1}')
@@ -58,5 +73,4 @@ for epoch in range(config['num_epochs']):
                   (epoch, i, running_loss / 2000))
             running_loss = 0.0
 
-print('Finished Training')
-
+save_model(model)

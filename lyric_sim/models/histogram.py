@@ -1,3 +1,4 @@
+from numpy import tanh
 import torch.nn as nn
 
 class HistogramModel(nn.Module):
@@ -8,7 +9,8 @@ class HistogramModel(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, 1)
+            nn.Linear(hidden_size, 1),
+            nn.Tanh()
         )
 
     def forward(self, x):

@@ -1,11 +1,8 @@
-import os
-import time
 import torch
 from torch.utils.data import Dataset
 import re
 import numpy as np
 import sqlite3
-from typing import List
 
 NUM_WORDS = 5000
 
@@ -46,7 +43,7 @@ class MxMLastfmJoinedDataset(Dataset):
                 print('\r' + f'Loaded {i} word counts', end="")
 
             # 1 if simialar 0 otherwise
-            is_similar = int(example[0] >= 0.5)
+            is_similar = int(example[0] >= similarity_threshold)
             self.__labels[i] = is_similar
             similar_count += is_similar
 
@@ -62,7 +59,7 @@ class MxMLastfmJoinedDataset(Dataset):
 
         print('\r' + f'Loaded {len(examples)} word counts',)
 
-        weights = np.array([similar_count/num_examples, (num_examples-similar_count)/num_examples])
+        weights = np.array([0.1, 1])
 
         print(f'Will sample class <not similar> with {weights[0]} probability and <similar> with {weights[1]} probability')
 

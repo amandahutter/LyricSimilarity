@@ -12,4 +12,5 @@ def parse_args_and_config():
         except yaml.YAMLError as yamlex:
             print("Error parsing config file:")
             print(yamlex)
+    config['config_name'] = args.config
     return config

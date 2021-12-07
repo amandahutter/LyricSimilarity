@@ -30,9 +30,8 @@ testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False
 testloader = DataLoader(testset, N, num_workers=num_workers)
 
 # Moved from above
-input_size = len(testset.vocab())
+input_size = len(testset.vocab)
 print("input size:", input_size)
-print(testset.vocab())
 
 MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
 
@@ -51,7 +50,10 @@ other = 0
 with torch.no_grad():
     for data in testloader:
         input, labels = data
-        outputs = model(input)
+        print("shape of input:",input.shape)
+        print("shape of labels:",labels.shape)
+        #outputs = model(input) # TODO: change what is passed into forward method
+        outputs = model(input[0], input[1])
 
         outputs = outputs.squeeze()
         n = labels.size(0)

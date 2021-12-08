@@ -6,6 +6,7 @@ lyrics_db_path = '../test_files/mxm_lyrics.db'
 mxm_db_path = '../test_files/mxm_dataset.db'
 lastfm_db_path = '../test_files/mxm_lastfm.db'
 
+
 @skip('TODO: fix test file')
 class TestLyricsSqliteDataset(unittest.TestCase):
     def setUp(self):

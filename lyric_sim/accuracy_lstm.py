@@ -21,7 +21,7 @@ emb_size = config['emb_size']
 hidden_size = config['hidden_size']
 dropout = config['dropout']
 num_fc = config['num_fc']
-combo_unit = CombinationType(config['combo_unit'])
+combo_unit = CombinationType[config['combo_unit']]
 num_workers = config['num_workers']
 
 
@@ -31,9 +31,8 @@ testloader = DataLoader(testset, N, num_workers=num_workers)
 
 # Moved from above
 input_size = len(testset.vocab)
-print("input size:", input_size)
 
-MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
+MODEL_PATH = f'./saved_models/{config["model_name"]}.pth'
 
 model = LSTM(input_size, emb_size, hidden_size, dropout, num_fc, combo_unit)
 model.to(device)
@@ -50,17 +49,18 @@ other = 0
 with torch.no_grad():
     for data in testloader:
         input, labels = data
-        print("shape of input:",input.shape)
-        print("shape of labels:",labels.shape)
-        #outputs = model(input) # TODO: change what is passed into forward method
+        
         outputs = model(input[0], input[1])
+        
+        outputs =  torch.argmax(outputs, dim = 2)
 
-        outputs = outputs.squeeze()
+        outputs = outputs.squeeze() 
+
         n = labels.size(0)
         total += n
-        # Round the outputs to 0 or 1.
         for i in range(n):
-            label_pred = int(torch.round(outputs[i]))
+
+            label_pred = outputs[i]
             label = labels[i]
 
             TP += (label_pred == 1) & (label == 1)

@@ -10,7 +10,10 @@ class CombinationType(Enum):
   ALL = 4
 
 class LSTM(nn.Module):
+
+
     def __init__(self, input_size, emb_size=20, hidden_size=10, dropout=0.90, num_fc=1, combo_unit=CombinationType.MULT):
+
         super(LSTM, self).__init__()
 
         self.input_size = input_size
@@ -85,6 +88,7 @@ class LSTM(nn.Module):
             sub = torch.sub(self.h_f_1, self.h_f_2)
             mult = torch.mul(self.h_f_1, self.h_f_2)
             self.h_f = torch.cat((add,sub,mult), dim = 2)
+
 
         # Fully Connected Layers 
         if self.num_fc == 1:

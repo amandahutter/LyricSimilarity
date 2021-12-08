@@ -1,0 +1,13 @@
+---
+  lyrics_db_path: './data_files/mxm_lyrics.db'
+  mxm_db_path: './data_files/mxm_dataset.db'
+  lastfm_db_path: './data_files/mxm_lastfm.db'
+  batch_size: 128
+  emb_size: 20
+  hidden_size: 10
+  dropout: 0.9
+  num_fc: 2
+  combo_unit: 1
+  num_epochs: 5
+  num_workers: 0
+  model_name: 'lstm_model'

@@ -10,7 +10,7 @@ class CombinationType(Enum):
   ALL = 4
 
 class LSTM(nn.Module):
-    def __init__(self, input_size, emb_size=20, hidden_size=10, dropout=0.90, num_fc = 1, combo_unit = 'MULT'):
+    def __init__(self, input_size, emb_size=20, hidden_size=10, dropout=0.90, num_fc = 1, combo_unit=CombinationType.MULT):
         super(LSTM, self).__init__()
 
         self.input_size = input_size
@@ -53,9 +53,7 @@ class LSTM(nn.Module):
         N, T = song.shape
         embedded = self.embedding(song)
         dropped = self.dropout(embedded)
-        h_n = torch.zeros(N, 1, self.hidden_size)
-        c_n = torch.zeros(N, 1, self.hidden_size)
-        _, (h_n, c_n) = self.lstm(dropped, (h_n, c_n))
+        _, (h_n, c_n) = self.lstm(dropped)
         h_n = self.dropout(h_n)
                     
         return h_n 
@@ -88,7 +86,7 @@ class LSTM(nn.Module):
             mult = torch.mul(self.h_f_1, self.h_f_2)
             self.h_f = torch.cat((add,sub,mult), dim = 2)
 
-        print("h_f shape:",self.h_f.shape)
+        #print("h_f shape:",self.h_f.shape)
 
         # Fully Connected Layers 
         if self.num_fc == 1:
@@ -99,6 +97,7 @@ class LSTM(nn.Module):
             self.h_f = self.relu(self.h_f)
             self.h_f = self.fc_final(self.h_f)
     
-        output = self.softmax(self.h_f)
+        #output = self.softmax(self.h_f)
+        output = self.h_f
 
         return output 

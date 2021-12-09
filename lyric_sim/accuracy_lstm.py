@@ -21,7 +21,7 @@ emb_size = config['emb_size']
 hidden_size = config['hidden_size']
 dropout = config['dropout']
 num_fc = config['num_fc']
-combo_unit = CombinationType(config['combo_unit'])
+combo_unit = CombinationType[config['combo_unit']]
 num_workers = config['num_workers']
 
 

@@ -26,7 +26,7 @@ num_workers = config['num_workers']
 
 
 print('Loading Lyrics testing data...')
-testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True)
+testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, True, True)
 testloader = DataLoader(testset, N, num_workers=num_workers)
 
 # Moved from above
@@ -36,7 +36,7 @@ MODEL_PATH = f'./saved_models/{config["model_name"]}.pth'
 
 model = LSTM(input_size, emb_size, hidden_size, dropout, num_fc, combo_unit)
 model.to(device)
-model.load_state_dict(torch.load(MODEL_PATH))
+#model.load_state_dict(torch.load(MODEL_PATH))
 
 correct = 0
 total = 0

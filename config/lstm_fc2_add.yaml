@@ -10,4 +10,4 @@
   combo_unit: 'ADD'
   num_epochs: 5
   num_workers: 0
-  model_name: 'lstm_model'
+  model_name: 'lstm_model_fc2_add'

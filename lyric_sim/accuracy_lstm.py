@@ -36,7 +36,7 @@ MODEL_PATH = f'./saved_models/{config["model_name"]}.pth'
 
 model = LSTM(input_size, emb_size, hidden_size, dropout, num_fc, combo_unit)
 model.to(device)
-#model.load_state_dict(torch.load(MODEL_PATH))
+model.load_state_dict(torch.load(MODEL_PATH))
 
 correct = 0
 total = 0

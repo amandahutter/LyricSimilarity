@@ -6,9 +6,11 @@ import re
 import numpy as np
 import pandas as pd
 import sqlite3
+from collections import Counter
 
-MAX_LENGTH = 150
+MAX_LENGTH = 100
 SIM_THRESHOLD = 0.5
+WORD_COUNT_MIN = 5
 
 class LyricsSqliteDataset(Dataset):
     def __init__(self, lyrics_db_path: str, mxm_db_path: str, lastfm_db_path: str, use_test: bool, pad_length: bool):
@@ -25,7 +27,8 @@ class LyricsSqliteDataset(Dataset):
                  FROM lyrics A 
                  JOIN (SELECT DISTINCT track_id AS tid, mxm_tid AS mxm_id, is_test FROM mxm.lyrics) B 
                  ON A.mxm_id = B.mxm_id
-                 WHERE lyrics <> "" AND B.is_test = {}'''.format(use_test)
+                 WHERE lyrics <> "" AND B.is_test = {}
+                 LIMIT 100'''.format(use_test)
         df = pd.read_sql_query(qry, con)
 
         self.__idx_to_track = df[['tid']].to_dict(orient='dict')['tid']
@@ -41,12 +44,19 @@ class LyricsSqliteDataset(Dataset):
         df_ids = df[['tid']].copy()
         df_ids.reset_index(inplace=True)
         
+        # remove infrequent and overfrequent words
+        tokenizer = get_tokenizer('basic_english')
+        all_words = [word for song in map(tokenizer, dataset.df['lyrics']) for word in song]
+        lyrics_words = Counter(all_words)
+        words_remove = list(map(lambda x: x[0], filter(lambda x: x[1] < WORD_COUNT_MIN, lyrics_words.items())))
+        words_remove.extend(['i', 'the', 'you', 'a', 'to', 'and', 'me', 's', 'it', 'in', 't', 'my', 'of', 'an'])
+        df['lyrics'] = df['lyrics'].apply(lambda x: [word for word in x if not word in set(words_remove)])
+        
         # pad if requested (inc. cutting to MAX_LENGTH)
         if pad_length:
             df['lyrics'] = df['lyrics'].apply(lambda x: ' '.join(x.split()[:MAX_LENGTH] + ['<pad>']*(MAX_LENGTH - len(x.split()))))
         
         # define vocab & create data (tensor of ints for lyrics)
-        tokenizer = get_tokenizer('basic_english')
         vocab = build_vocab_from_iterator(map(tokenizer, df['lyrics']), specials=['<pad>'])
         vocab.set_default_index(0)
         self.vocab = vocab
@@ -80,7 +90,13 @@ class LyricsSqliteDataset(Dataset):
         # select random non-similar in equal number for 0s
         df_sim_no = df_sim_lyrics[df_sim_lyrics['similar'] == 0].sample(n=df_sim_yes.shape[0], replace=False, random_state=42)
 
-        self.df_sim = pd.concat([df_sim_yes, df_sim_no], axis=0, ignore_index=True)
+        df_sim = pd.concat([df_sim_yes, df_sim_no], axis=0, ignore_index=True)
+        
+        df_sim = df_sim[['src', 'src_id', 'dest', 'dest_id', 'is_test', 'score', 'similar']]
+        df_sim_reverse = df_sim[['dest', 'dest_id', 'src', 'src_id', 'is_test', 'score', 'similar']].copy()
+        df_sim_reverse.columns = ['src', 'src_id', 'dest', 'dest_id', 'is_test', 'score', 'similar']
+        df_sim = pd.concat([df_sim, df_sim_reverse], axis=0, ignore_index=True)
+        self.df_sim = df_sim.drop_duplicates(subset=['src', 'dest'], keep='last', ignore_index=True)
         
         # close connections
         cur.close()

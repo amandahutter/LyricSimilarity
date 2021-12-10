@@ -6,11 +6,9 @@ import re
 import numpy as np
 import pandas as pd
 import sqlite3
-from collections import Counter
 
 MAX_LENGTH = 100
 SIM_THRESHOLD = 0.5
-WORD_COUNT_MIN = 5
 
 class LyricsSqliteDataset(Dataset):
     def __init__(self, lyrics_db_path: str, mxm_db_path: str, lastfm_db_path: str, use_test: bool, pad_length: bool):

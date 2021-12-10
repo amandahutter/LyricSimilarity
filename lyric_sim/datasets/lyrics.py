@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import sqlite3
 
-MAX_LENGTH = 150
+MAX_LENGTH = 100
 SIM_THRESHOLD = 0.5
 
 class LyricsSqliteDataset(Dataset):
@@ -47,9 +47,14 @@ class LyricsSqliteDataset(Dataset):
         
         # define vocab & create data (tensor of ints for lyrics)
         tokenizer = get_tokenizer('basic_english')
-        vocab = build_vocab_from_iterator(map(tokenizer, df['lyrics']), specials=['<pad>'])
-        vocab.set_default_index(0)
-        self.vocab = vocab
+        if use_test:
+            self.vocab = torch.load('./data_files/lyrics_vocab.pth')
+        else:
+            vocab = build_vocab_from_iterator(map(tokenizer, df['lyrics']), specials=['<pad>'])
+            vocab.set_default_index(0)
+            self.vocab = vocab
+            torch.save(vocab, './data_files/lyrics_vocab.pth')
+
         self.data = [torch.tensor(vocab(tokenizer(item)), dtype=torch.long) for item in df['lyrics']]
         
         # similarity score (from lastfm)
@@ -80,7 +85,13 @@ class LyricsSqliteDataset(Dataset):
         # select random non-similar in equal number for 0s
         df_sim_no = df_sim_lyrics[df_sim_lyrics['similar'] == 0].sample(n=df_sim_yes.shape[0], replace=False, random_state=42)
 
-        self.df_sim = pd.concat([df_sim_yes, df_sim_no], axis=0, ignore_index=True)
+        df_sim = pd.concat([df_sim_yes, df_sim_no], axis=0, ignore_index=True)
+        
+        df_sim = df_sim[['src', 'src_id', 'dest', 'dest_id', 'is_test', 'score', 'similar']]
+        df_sim_reverse = df_sim[['dest', 'dest_id', 'src', 'src_id', 'is_test', 'score', 'similar']].copy()
+        df_sim_reverse.columns = ['src', 'src_id', 'dest', 'dest_id', 'is_test', 'score', 'similar']
+        df_sim = pd.concat([df_sim, df_sim_reverse], axis=0, ignore_index=True)
+        self.df_sim = df_sim.drop_duplicates(subset=['src', 'dest'], keep='last', ignore_index=True)
         
         # close connections
         cur.close()

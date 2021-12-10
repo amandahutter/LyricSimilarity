@@ -44,22 +44,20 @@ class LyricsSqliteDataset(Dataset):
         df_ids = df[['tid']].copy()
         df_ids.reset_index(inplace=True)
         
-        # remove infrequent and overfrequent words
-        tokenizer = get_tokenizer('basic_english')
-        all_words = [word for song in map(tokenizer, dataset.df['lyrics']) for word in song]
-        lyrics_words = Counter(all_words)
-        words_remove = list(map(lambda x: x[0], filter(lambda x: x[1] < WORD_COUNT_MIN, lyrics_words.items())))
-        words_remove.extend(['i', 'the', 'you', 'a', 'to', 'and', 'me', 's', 'it', 'in', 't', 'my', 'of', 'an'])
-        df['lyrics'] = df['lyrics'].apply(lambda x: [word for word in x if not word in set(words_remove)])
-        
         # pad if requested (inc. cutting to MAX_LENGTH)
         if pad_length:
             df['lyrics'] = df['lyrics'].apply(lambda x: ' '.join(x.split()[:MAX_LENGTH] + ['<pad>']*(MAX_LENGTH - len(x.split()))))
         
         # define vocab & create data (tensor of ints for lyrics)
-        vocab = build_vocab_from_iterator(map(tokenizer, df['lyrics']), specials=['<pad>'])
-        vocab.set_default_index(0)
-        self.vocab = vocab
+        tokenizer = get_tokenizer('basic_english')
+        if use_test:
+            self.vocab = torch.load('./data_files/lyrics_vocab.pth')
+        else:
+            vocab = build_vocab_from_iterator(map(tokenizer, df['lyrics']), specials=['<pad>'])
+            vocab.set_default_index(0)
+            self.vocab = vocab
+            torch.save(vocab, './data_files/lyrics_vocab.pth')
+
         self.data = [torch.tensor(vocab(tokenizer(item)), dtype=torch.long) for item in df['lyrics']]
         
         # similarity score (from lastfm)

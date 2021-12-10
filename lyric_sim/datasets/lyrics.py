@@ -25,8 +25,7 @@ class LyricsSqliteDataset(Dataset):
                  FROM lyrics A 
                  JOIN (SELECT DISTINCT track_id AS tid, mxm_tid AS mxm_id, is_test FROM mxm.lyrics) B 
                  ON A.mxm_id = B.mxm_id
-                 WHERE lyrics <> "" AND B.is_test = {}
-                 LIMIT 100'''.format(use_test)
+                 WHERE lyrics <> "" AND B.is_test = {}'''.format(use_test)
         df = pd.read_sql_query(qry, con)
 
         self.__idx_to_track = df[['tid']].to_dict(orient='dict')['tid']

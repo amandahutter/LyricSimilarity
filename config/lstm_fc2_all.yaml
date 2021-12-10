@@ -7,7 +7,7 @@
   hidden_size: 10
   dropout: 0.9
   num_fc: 2
-  combo_unit: 4
+  combo_unit: 'ALL'
   num_epochs: 5
   num_workers: 0
   model_name: 'lstm_model_fc2_all'

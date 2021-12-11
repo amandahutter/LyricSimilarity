@@ -1,5 +1,7 @@
 import argparse
 import yaml
+from typing import List
+from matplotlib import pyplot
 
 def parse_args_and_config():
     parser = argparse.ArgumentParser(description="Train <something... fill this out later>")
@@ -14,3 +16,7 @@ def parse_args_and_config():
             print(yamlex)
     config['config_name'] = args.config
     return config
+
+def plot_loss(loss_history: List[float], filename: str):
+    pyplot.plot(loss_history)
+    pyplot.savefig(filename)

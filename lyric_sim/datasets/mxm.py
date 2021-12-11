@@ -42,10 +42,9 @@ class MxMLastfmJoinedDataset(Dataset):
             if i % 10000 == 0:
                 print('\r' + f'Loaded {i} word counts', end="")
 
-            # 1 if simialar 0 otherwise
-            is_similar = int(example[0] >= similarity_threshold)
-            self.__labels[i] = is_similar
-            similar_count += is_similar
+            # 1 if similar -1 otherwise
+            similar_count += int(example[0] >= similarity_threshold)
+            self.__labels[i] = 1 if int(example[0] >= similarity_threshold) else -1
 
             src_counts = example[1].split(',')
             for src_count in src_counts:
@@ -59,7 +58,6 @@ class MxMLastfmJoinedDataset(Dataset):
 
         print('\r' + f'Loaded {len(examples)} word counts',)
 
-        #weights = np.array([0.1, 1])
         weights = np.array([similar_count/num_examples, (num_examples-similar_count)/num_examples])
 
         print(f'Will sample class <not similar> with {weights[0]} probability and <similar> with {weights[1]} probability')

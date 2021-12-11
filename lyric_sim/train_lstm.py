@@ -59,7 +59,12 @@ for epoch in range(config['num_epochs']):
         # forward + backward + optimize
         outputs = model(inputs[0], inputs[1])
 
-        loss = criterion(outputs.squeeze(), labels)
+        #loss = criterion(outputs.squeeze(), labels)
+        outputs = outputs.squeeze()
+        outputs = outputs.to(torch.float)
+        labels = labels.to(torch.long)
+        loss = criterion(outputs, labels)
+
         loss.backward()
         optimizer.step()
 

@@ -26,7 +26,8 @@ num_workers = config['num_workers']
 
 
 print('Loading Lyrics testing data...')
-testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, True, True)
+#testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, True, True) # testing 
+testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True) # training
 testloader = DataLoader(testset, N, num_workers=num_workers)
 
 # Moved from above

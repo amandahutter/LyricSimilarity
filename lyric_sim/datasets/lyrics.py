@@ -74,7 +74,12 @@ class LyricsSqliteDataset(Dataset):
         
         # keep if both tracks have lyrics
         df_sim_lyrics = df_sim_all[(~df_sim_all['src_id'].isnull()) & (~df_sim_all['dest_id'].isnull())].copy()
-        
+
+        # remove instances where dest -> src already exists in data
+        df_sim_lyrics['unordered_pair'] = df_sim_lyrics.apply(lambda row : sorted([row['src'], row['dest']]), axis = 1)
+        df_sim_lyrics['unordered_pair'] = df_sim_lyrics['unordered_pair'].astype('str')
+        df_sim_lyrics = df_sim_lyrics.drop_duplicates(subset=['unordered_pair'], keep='first', ignore_index=True)
+
         # set 1/0 for similarity
         df_sim_lyrics['similar'] = np.where(df_sim_lyrics['score'] >= SIM_THRESHOLD, 1, 0)
         similar_count = df_sim_lyrics[df_sim_lyrics['similar'] == 1].shape[0]

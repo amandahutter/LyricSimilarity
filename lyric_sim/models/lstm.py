@@ -53,6 +53,9 @@ class LSTM(nn.Module):
     
     def network(self, song):
 
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        song = song.to(device)
+        
         N, T = song.shape
         embedded = self.embedding(song)
         dropped = self.dropout(embedded)

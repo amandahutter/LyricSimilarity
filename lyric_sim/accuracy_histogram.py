@@ -16,6 +16,7 @@ print(f'Using device {device}')
 N = config['batch_size']
 
 mxm_db = config['mxm_db']
+learning_rate = config['learning_rate']
 hidden_size = config['hidden_size']
 num_workers = config['num_workers']
 num_examples = config['num_examples']
@@ -54,9 +55,9 @@ with torch.no_grad():
             label = labels[i]
 
             TP += (label_pred == 1) & (label == 1)
-            TN += (label_pred == 0) & (label == 0)
-            FP += (label_pred == 1) & (label == 0)
-            FN += (label_pred == 0) & (label == 1)
+            TN += (label_pred == -1) & (label == -1)
+            FP += (label_pred == 1) & (label == -1)
+            FN += (label_pred == -1) & (label == 1)
 
 correct = TP + TN
 print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')

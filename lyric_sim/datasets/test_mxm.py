@@ -10,7 +10,7 @@ class TestMxMLastfmJoinedDataset(unittest.TestCase):
     def test_getitem(self):
         input, label = self.dataset.__getitem__(0)
         self.assertEqual(input.shape[0], 10000)
-        self.assertEqual(label, 0)
+        self.assertEqual(label, -1)
     
     def test_getlen(self):
         self.assertEqual(self.dataset.__len__(), 29)

@@ -63,7 +63,7 @@ correct = TP + TN
 print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')
 print(f'F1-Score of the network on {total} test examples: {100 * (2*TP) / (2*TP + FP + FN)}%')
 
-print(f'Precision (Positive Preditive Value) on {total} test examples: {100 * TP/(TP + FP)}%')
+print(f'Precision (Positive Predictive Value) on {total} test examples: {100 * TP/(TP + FP)}%')
 print(f'Recall (True Positive Rate) on {total} test examples: {100 * TP/(TP + FN)}%')
 print(f'Negative Preditive Value on {total} test examples: {100 * TN/(TN + FN)}%')
 print(f'Specificity (True Negative Rate) on {total} test examples: {100 * TN/(TN + FP)}%')

@@ -27,4 +27,5 @@ def plot_loss(loss_history: List[float], filename: str):
 def write_results_to_csv(TP, TN, FP, FN, filename):
     with open(filename) as csvfile:
         writer = csv.writer(csvfile)
+        writer.writerow('TP', 'TN', 'FP', 'FN')
         writer.writerow(TP, TN, FP, FN)

@@ -39,6 +39,8 @@ model = LSTM(input_size, emb_size, hidden_size, dropout, num_fc, combo_unit)
 model.to(device)
 model.load_state_dict(torch.load(MODEL_PATH))
 
+model.eval()
+
 correct = 0
 total = 0
 TP = 0

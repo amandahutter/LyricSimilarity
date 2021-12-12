@@ -4,7 +4,7 @@ from torch.utils.data.sampler import WeightedRandomSampler
 import torch.optim as optim
 import torch.nn as nn
 from datasets.mxm import MxMLastfmJoinedDataset
-from utils import parse_args_and_config
+from utils import parse_args_and_config, write_results_to_csv
 
 from models.histogram import HistogramModel
 
@@ -22,13 +22,14 @@ hidden_size_1 = config['hidden_size_1']
 num_workers = config['num_workers']
 num_examples = config['num_examples']
 keep_words = config['keep_words']
+config_name = config["config_name"]
 
 print('Loading Musix Match testing data...')
 testset = MxMLastfmJoinedDataset(mxm_db, True, num_examples=num_examples, keep_words=keep_words)
 sampler = WeightedRandomSampler(testset.get_sample_weights(), testset.__len__())
 testloader = DataLoader(testset, N, num_workers=num_workers, sampler=sampler)
 
-MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
+MODEL_PATH = f'./saved_models/{config_name}.pth'
 
 model = HistogramModel(keep_words*2, hidden_size_0, hidden_size_1)
 model.load_state_dict(torch.load(MODEL_PATH))
@@ -58,6 +59,8 @@ with torch.no_grad():
             TN += (label_pred == -1) & (label == -1)
             FP += (label_pred == 1) & (label == -1)
             FN += (label_pred == -1) & (label == 1)
+
+write_results_to_csv(TP, TN, FP, FN, f'./plots/{config_name}.csv')
 
 correct = TP + TN
 print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')

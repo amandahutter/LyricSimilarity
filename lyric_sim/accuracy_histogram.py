@@ -17,20 +17,20 @@ N = config['batch_size']
 
 mxm_db = config['mxm_db']
 learning_rate = config['learning_rate']
-hidden_size = config['hidden_size']
+hidden_size_0 = config['hidden_size_0']
+hidden_size_1 = config['hidden_size_1']
 num_workers = config['num_workers']
 num_examples = config['num_examples']
+keep_words = config['keep_words']
 
 print('Loading Musix Match testing data...')
-testset = MxMLastfmJoinedDataset(mxm_db, True, num_examples=num_examples)
+testset = MxMLastfmJoinedDataset(mxm_db, True, num_examples=num_examples, keep_words=keep_words)
 sampler = WeightedRandomSampler(testset.get_sample_weights(), testset.__len__())
 testloader = DataLoader(testset, N, num_workers=num_workers, sampler=sampler)
 
-NUM_WORDS = 5000
-
 MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
 
-model = HistogramModel(NUM_WORDS*2, hidden_size)
+model = HistogramModel(keep_words*2, hidden_size_0, hidden_size_1)
 model.load_state_dict(torch.load(MODEL_PATH))
 
 correct = 0
@@ -49,9 +49,9 @@ with torch.no_grad():
         outputs = outputs.squeeze()
         n = labels.size(0)
         total += n
-        # Round the outputs to 0 or 1.
+        # Round the outputs to -1 or 1.
         for i in range(n):
-            label_pred = int(torch.round(outputs[i]))
+            label_pred = 1 if outputs[i] > 0 else -1
             label = labels[i]
 
             TP += (label_pred == 1) & (label == 1)

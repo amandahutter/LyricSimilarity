@@ -19,4 +19,6 @@ def parse_args_and_config():
 
 def plot_loss(loss_history: List[float], filename: str):
     pyplot.plot(loss_history)
+    pyplot.xlabel('1000 batches')
+    pyplot.ylabel('Loss')
     pyplot.savefig(filename)

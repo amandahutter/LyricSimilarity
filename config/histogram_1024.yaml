@@ -1,11 +1,11 @@
 ---
-  batch_size: 8
-  learning_rate: 0.001
+  batch_size: 16
+  learning_rate: 0.002
   momentum: 0.9
-  num_epochs: 1
+  num_epochs: 5
   num_workers: 4
-  num_examples: 10000
+  num_examples: 500000
   keep_words: 1024
   hidden_size_0: 1024
-  hidden_size_1: 128
+  hidden_size_1: 1024
   mxm_db: './data_files/mxm_lastfm.db'

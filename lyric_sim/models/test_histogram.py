@@ -12,7 +12,7 @@ class TestMxmHistogram(unittest.TestCase):
         # convert inputs into batches of size N=1
         example = torch.unsqueeze(example, 0)
 
-        model = HistogramModel(10000, 8192)
+        model = HistogramModel(10000, 1024, 128)
         y = model.forward(example)
         self.assertEqual(len(y), 1)
 

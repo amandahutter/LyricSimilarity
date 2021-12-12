@@ -4,7 +4,7 @@ from torch.utils.data.sampler import WeightedRandomSampler
 import torch.optim as optim
 import torch.nn as nn
 from datasets.mxm import MxMLastfmJoinedDataset
-from utils import parse_args_and_config
+from utils import parse_args_and_config, write_results_to_csv
 
 from models.histogram import HistogramModel
 
@@ -17,20 +17,21 @@ N = config['batch_size']
 
 mxm_db = config['mxm_db']
 learning_rate = config['learning_rate']
-hidden_size = config['hidden_size']
+hidden_size_0 = config['hidden_size_0']
+hidden_size_1 = config['hidden_size_1']
 num_workers = config['num_workers']
 num_examples = config['num_examples']
+keep_words = config['keep_words']
+config_name = config["config_name"]
 
 print('Loading Musix Match testing data...')
-testset = MxMLastfmJoinedDataset(mxm_db, True, num_examples=num_examples)
+testset = MxMLastfmJoinedDataset(mxm_db, True, num_examples=num_examples, keep_words=keep_words)
 sampler = WeightedRandomSampler(testset.get_sample_weights(), testset.__len__())
 testloader = DataLoader(testset, N, num_workers=num_workers, sampler=sampler)
 
-NUM_WORDS = 5000
+MODEL_PATH = f'./saved_models/{config_name}.pth'
 
-MODEL_PATH = f'./saved_models/{config["config_name"]}.pth'
-
-model = HistogramModel(NUM_WORDS*2, hidden_size)
+model = HistogramModel(keep_words*2, hidden_size_0, hidden_size_1)
 model.load_state_dict(torch.load(MODEL_PATH))
 
 correct = 0
@@ -49,9 +50,9 @@ with torch.no_grad():
         outputs = outputs.squeeze()
         n = labels.size(0)
         total += n
-        # Round the outputs to 0 or 1.
+        # Round the outputs to -1 or 1.
         for i in range(n):
-            label_pred = int(torch.round(outputs[i]))
+            label_pred = 1 if outputs[i] > 0 else -1
             label = labels[i]
 
             TP += (label_pred == 1) & (label == 1)
@@ -59,11 +60,13 @@ with torch.no_grad():
             FP += (label_pred == 1) & (label == -1)
             FN += (label_pred == -1) & (label == 1)
 
+write_results_to_csv(TP.item(), TN.item(), FP.item(), FN.item(), f'./plots/{config_name}.csv')
+
 correct = TP + TN
 print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')
 print(f'F1-Score of the network on {total} test examples: {100 * (2*TP) / (2*TP + FP + FN)}%')
 
-print(f'Precision (Positive Preditive Value) on {total} test examples: {100 * TP/(TP + FP)}%')
+print(f'Precision (Positive Predictive Value) on {total} test examples: {100 * TP/(TP + FP)}%')
 print(f'Recall (True Positive Rate) on {total} test examples: {100 * TP/(TP + FN)}%')
 print(f'Negative Preditive Value on {total} test examples: {100 * TN/(TN + FN)}%')
 print(f'Specificity (True Negative Rate) on {total} test examples: {100 * TN/(TN + FP)}%')

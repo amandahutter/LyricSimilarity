@@ -12,7 +12,7 @@ class MxMLastfmJoinedDataset(Dataset):
     The labels are similarity score threshold between the two songs is_similar(s1, s2) >= .5 ? 1 : 0. Uses the similars_src table from lastfm only.
     """
 
-    def __init__(self, mxm_lasfm_db_path, use_test: bool, num_examples=500000, similarity_threshold=0.5):
+    def __init__(self, mxm_lasfm_db_path, use_test: bool, num_examples=500000, similarity_threshold=0.5, keep_words=NUM_WORDS):
 
         use_test = int(use_test)
 
@@ -31,7 +31,8 @@ class MxMLastfmJoinedDataset(Dataset):
             LIMIT ?;
         """, (use_test, num_examples,)).fetchall()
 
-        self.__data = np.zeros((len(examples), 10000), dtype=np.int8)
+        self.__data = np.zeros((len(examples), keep_words*2), dtype=np.int8)
+
         self.__labels = np.empty(len(examples), dtype=np.float32)
 
         # figure out class counts so we can sample later
@@ -49,20 +50,23 @@ class MxMLastfmJoinedDataset(Dataset):
             src_counts = example[1].split(',')
             for src_count in src_counts:
                 word_idx, count = src_count.split(':')
-                self.__data[i][int(word_idx)] = count
+                if int(word_idx) < keep_words:
+                    self.__data[i][int(word_idx)] = count
 
             dest_counts = example[2].split(',')
             for dest_count in dest_counts:
                 word_idx, count = dest_count.split(':')
-                self.__data[i][int(word_idx)+5000] = count
+                if int(word_idx) < keep_words:
+                    self.__data[i][int(word_idx)+keep_words] = count
 
         print('\r' + f'Loaded {len(examples)} word counts',)
 
-        weights = np.array([similar_count/num_examples, (num_examples-similar_count)/num_examples])
+        weight_similar = (num_examples-similar_count)/num_examples
+        weight_not_similar = similar_count/num_examples
 
-        print(f'Will sample class <not similar> with {weights[0]} probability and <similar> with {weights[1]} probability')
+        print(f'Will sample class <not similar> with {weight_not_similar} probability and <similar> with {weight_similar} probability')
 
-        self.__sample_weights = np.array([weights[int(t)] for t in self.__labels])
+        self.__sample_weights = np.array([(weight_similar if t == 1 else weight_not_similar) for t in self.__labels])
 
     def __len__(self):
         return len(self.__data)

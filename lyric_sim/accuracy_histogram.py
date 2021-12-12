@@ -60,7 +60,7 @@ with torch.no_grad():
             FP += (label_pred == 1) & (label == -1)
             FN += (label_pred == -1) & (label == 1)
 
-write_results_to_csv(TP, TN, FP, FN, f'./plots/{config_name}.csv')
+write_results_to_csv(TP.item(), TN.item(), FP.item(), FN.item(), f'./plots/{config_name}.csv')
 
 correct = TP + TN
 print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')

@@ -1,0 +1,15 @@
+These models have this structure
+
+0) Kept num_layers = 1 
+  
+1) in the init of LSTM,
+self.lstm = nn.LSTM(emb_size, hidden_size, batch_first = True, dropout = dropout) 
+2) within LSTM network loop, comment out first dropout layer. 
+3) within train_lstm, add the Shuffle = True
+
+batch_size: 128
+  emb_size: 20
+  hidden_size: 10
+  dropout: 0.9
+  num_fc: 1
+  num_epochs: 5

@@ -12,20 +12,25 @@ class CombinationType(Enum):
 class LSTM(nn.Module):
 
 
-    def __init__(self, input_size, emb_size=20, hidden_size=10, dropout=0.90, num_fc=1, combo_unit=CombinationType.MULT):
+    def __init__(self, input_size, emb_size=20, hidden_size=10, num_layers=1, dropout=0.90, num_fc=1, combo_unit=CombinationType.MULT, dropout_first=False):
 
         super(LSTM, self).__init__()
 
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.emb_size = emb_size 
+        self.emb_size = emb_size
+        self.num_layers = num_layers
         self.dropout = dropout 
         self.num_fc = num_fc
         self.combo_unit = combo_unit
+        self.dropout_first = dropout_first
 
         self.embedding = nn.Embedding(input_size, emb_size)
-        self.dropout = nn.Dropout(p = dropout)        
-        self.lstm = nn.LSTM(emb_size, hidden_size, batch_first = True)
+        self.dropout = nn.Dropout(p = dropout)
+        if num_layers > 1:
+            self.lstm = nn.LSTM(emb_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
+        else:
+            self.lstm = nn.LSTM(emb_size, hidden_size, batch_first=True)
 
         # Variable size of Fully Connected Layer, dependent on Combination Unit 
         if combo_unit == CombinationType.ADD:
@@ -58,8 +63,14 @@ class LSTM(nn.Module):
         
         N, T = song.shape
         embedded = self.embedding(song)
-        dropped = self.dropout(embedded)
-        _, (h_n, c_n) = self.lstm(dropped)
+        if self.dropout_first:
+            dropped = self.dropout(embedded)
+            _, (h_n, c_n) = self.lstm(dropped)
+        else:
+            _, (h_n, c_n) = self.lstm(embedded)
+
+        h_n = h_n[-1]  # h of shape (batch, hidden_size)
+        h_n = h_n.unsqueeze(0)
         h_n = self.dropout(h_n)
                     
         return h_n 

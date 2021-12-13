@@ -25,7 +25,9 @@ num_workers = config['num_workers']
 
 print('Loading Lyrics training data...')
 trainset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True)
-trainloader = DataLoader(trainset, N, num_workers=num_workers)
+#trainloader = DataLoader(trainset, N, num_workers=num_workers)
+trainloader = DataLoader(trainset, N, shuffle = True, num_workers=num_workers)
+
 
 MODEL_PATH = f'./saved_models/{config["model_name"]}.pth'
 

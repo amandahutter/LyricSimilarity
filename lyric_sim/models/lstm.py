@@ -25,7 +25,9 @@ class LSTM(nn.Module):
 
         self.embedding = nn.Embedding(input_size, emb_size)
         self.dropout = nn.Dropout(p = dropout)        
-        self.lstm = nn.LSTM(emb_size, hidden_size, batch_first = True)
+        #self.lstm = nn.LSTM(emb_size, hidden_size, batch_first = True)
+        self.lstm = nn.LSTM(emb_size, hidden_size, batch_first = True, dropout = dropout)
+        #self.lstm = nn.LSTM(emb_size, hidden_size, batch_first = True, num_layers = 2, dropout = dropout)
 
         # Variable size of Fully Connected Layer, dependent on Combination Unit 
         if combo_unit == CombinationType.ADD:
@@ -44,8 +46,7 @@ class LSTM(nn.Module):
         self.fc_first =  nn.Linear(self.hidden_mult, self.hidden_mult)
         self.relu = nn.ReLU()
         self.fc_final = nn.Linear(self.hidden_mult, 2)
-        #self.softmax = nn.Softmax(dim = 1)
-        # Should there be CrossEntropyLoss here, instead of softmax? 
+
 
         self.h_f_1 = None 
         self.h_f_2 = None 
@@ -58,9 +59,11 @@ class LSTM(nn.Module):
         
         N, T = song.shape
         embedded = self.embedding(song)
-        dropped = self.dropout(embedded)
-        _, (h_n, c_n) = self.lstm(dropped)
+        #dropped = self.dropout(embedded)
+        #_, (h_n, c_n) = self.lstm(dropped)
+        _, (h_n, c_n) = self.lstm(embedded)
         h_n = self.dropout(h_n)
+        #print("Shape after LSTM 2 layer:",h_n.shape)
                     
         return h_n 
 

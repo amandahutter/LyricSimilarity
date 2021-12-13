@@ -55,7 +55,7 @@ class LyricsSqliteDataset(Dataset):
             self.vocab = vocab
             torch.save(vocab, './data_files/lyrics_vocab.pth')
 
-        self.data = [torch.tensor(vocab(tokenizer(item)), dtype=torch.long) for item in df['lyrics']]
+        self.data = [torch.tensor(self.vocab(tokenizer(item)), dtype=torch.long) for item in df['lyrics']]
         
         # similarity score (from lastfm)
         qry = '''SELECT A.*

@@ -61,7 +61,8 @@ class MxMLastfmJoinedDataset(Dataset):
 
         print('\r' + f'Loaded {len(examples)} word counts',)
 
-        weight_similar = (num_examples-similar_count)/num_examples
+        # weight_similar = (num_examples-similar_count)/num_examples
+        weight_similar = 1
         weight_not_similar = similar_count/num_examples
 
         print(f'Will sample class <not similar> with {weight_not_similar} probability and <similar> with {weight_similar} probability')

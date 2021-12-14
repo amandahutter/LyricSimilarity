@@ -7,9 +7,10 @@ class HistogramModel(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(input_size, hidden_size_0),
             nn.ReLU(),
-            nn.Linear(hidden_size_0, hidden_size_1),
+            nn.Dropout(0.10),
+            nn.Linear(hidden_size_0, hidden_size_0),
             nn.ReLU(),
-            nn.Linear(hidden_size_1, 1),
+            nn.Linear(hidden_size_0, 1),
             nn.Tanh()
         )
 

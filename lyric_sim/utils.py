@@ -24,8 +24,8 @@ def plot_loss(loss_history: List[float], filename: str):
     pyplot.ylabel('Loss')
     pyplot.savefig(filename)
 
-def write_results_to_csv(TP, TN, FP, FN, filename):
+def write_results_to_csv(TP, TN, FP, FN, accuracy, f1, filename):
     with open(filename, 'w+') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['TP', 'TN', 'FP', 'FN'])
-        writer.writerow([TP, TN, FP, FN])
+        writer.writerow(['TP', 'TN', 'FP', 'FN', 'accuracy', 'f1'])
+        writer.writerow([TP, TN, FP, FN, accuracy, f1])

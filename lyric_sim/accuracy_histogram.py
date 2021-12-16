@@ -27,7 +27,7 @@ config_name = config["config_name"]
 print('Loading Musix Match testing data...')
 testset = MxMLastfmJoinedDataset(mxm_db, True, num_examples=num_examples, keep_words=keep_words)
 sampler = WeightedRandomSampler(testset.get_sample_weights(), testset.__len__())
-testloader = DataLoader(testset, N, num_workers=num_workers, sampler=sampler)
+testloader = DataLoader(testset, batch_size=N, num_workers=num_workers, sampler=sampler)
 
 MODEL_PATH = f'./saved_models/{config_name}.pth'
 
@@ -40,7 +40,8 @@ TP = 0
 FP = 0 
 TN = 0 
 FN = 0 
-other = 0 
+
+model.eval()
 # since we're not training, we don't need to calculate the gradients for our outputs
 with torch.no_grad():
     for data in testloader:
@@ -60,11 +61,14 @@ with torch.no_grad():
             FP += (label_pred == 1) & (label == -1)
             FN += (label_pred == -1) & (label == 1)
 
-write_results_to_csv(TP.item(), TN.item(), FP.item(), FN.item(), f'./plots/{config_name}.csv')
-
 correct = TP + TN
-print(f'Accuracy of the network on {total} test examples: {100 * correct / total}%')
-print(f'F1-Score of the network on {total} test examples: {100 * (2*TP) / (2*TP + FP + FN)}%')
+accuracy = 100 * correct / total
+f1 = 100 * (2*TP) / (2*TP + FP + FN)
+
+write_results_to_csv(TP.item(), TN.item(), FP.item(), FN.item(), accuracy.item(), f1.item(), f'./plots/{config_name}.csv')
+
+print(f'Accuracy of the network on {total} test examples: {accuracy}%')
+print(f'F1-Score of the network on {total} test examples: {f1}%')
 
 print(f'Precision (Positive Predictive Value) on {total} test examples: {100 * TP/(TP + FP)}%')
 print(f'Recall (True Positive Rate) on {total} test examples: {100 * TP/(TP + FN)}%')

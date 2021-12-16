@@ -8,7 +8,6 @@ import torch.optim as optim
 import torch.nn as nn
 from datasets.mxm import MxMLastfmJoinedDataset
 from utils import parse_args_and_config, plot_loss
-import functools
 
 from models.histogram import HistogramModel
 
@@ -58,7 +57,7 @@ def worker_init(worker_id):
 print('Loading Musix Match training data...')
 trainset = MxMLastfmJoinedDataset(mxm_db, False, num_examples=num_examples, keep_words=keep_words)
 sampler = WeightedRandomSampler(trainset.get_sample_weights(), trainset.__len__())
-trainloader = DataLoader(trainset, N, num_workers=num_workers, sampler=sampler, worker_init_fn=worker_init)
+trainloader = DataLoader(trainset, batch_size=N, num_workers=num_workers, sampler=sampler, worker_init_fn=worker_init)
 
 for epoch in range(config['num_epochs']):
     print(f'Training epoch {epoch+1}')
@@ -69,8 +68,9 @@ for epoch in range(config['num_epochs']):
     running_loss = 0.0
     for (i, batch) in enumerate(trainloader, 0):
 
-        total += len(batch[1])
-        similars += functools.reduce(lambda _, t: int(t == 1), batch[1])
+        # total += len(batch[1])
+        # for sim in batch[1]:
+        #     similars += int(sim.item() == 1)
 
         inputs, labels = batch[0].to(device), batch[1].to(device)
 
@@ -92,8 +92,8 @@ for epoch in range(config['num_epochs']):
             print('[%d, %5d] loss: %.3f similars/total: %d/%d' %
                   (epoch, i, running_loss / 1000, similars, total))
             running_loss = 0.0
-            total = 0
-            similars = 0
+            # total = 0
+            # similars = 0
 
 save_model(model)
 plot_loss(loss_history, f'./plots/{config_name}.png')

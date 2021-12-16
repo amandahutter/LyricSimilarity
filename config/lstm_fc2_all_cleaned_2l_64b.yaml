@@ -2,16 +2,16 @@
   lyrics_db_path: './data_files/mxm_lyrics_cleaned.db'
   mxm_db_path: './data_files/mxm_dataset.db'
   lastfm_db_path: './data_files/mxm_lastfm.db'
-  batch_size: 128
+  batch_size: 64
   emb_size: 20
   hidden_size: 10
   dropout: 0.9
-  num_fc: 1
-  combo_unit: 'ADD'
+  num_fc: 2
+  combo_unit: 'ALL'
   num_epochs: 5
   num_workers: 0
-  num_layers: 1
+  num_layers: 2
   dropout_first : False
   learning_rate: 0.001
   momentum: 0.90
-  model_name: 'lstm_model_fc1_add_cleaned'
+  model_name: 'lstm_model_fc2_all_cleaned_2l_64b'

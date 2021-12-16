@@ -29,8 +29,8 @@ num_workers = config['num_workers']
 dropout_first = config['dropout_first']
 
 print('Loading Lyrics testing data...')
-testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, True, True) # testing
-#testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True) # training
+#testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, True, True) # testing
+testset = LyricsSqliteDataset(lyrics_db_path, mxm_db_path, lastfm_db_path, False, True) # training
 print('Size of testset: ', len(testset))
 testloader = DataLoader(testset, N, shuffle=True, num_workers=num_workers)
 

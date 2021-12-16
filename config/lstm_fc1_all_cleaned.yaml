@@ -10,4 +10,8 @@
   combo_unit: 'ALL'
   num_epochs: 5
   num_workers: 0
+  num_layers: 1
+  dropout_first : False
+  learning_rate: 0.001
+  momentum: 0.90
   model_name: 'lstm_model_fc1_all_cleaned'

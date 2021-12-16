@@ -33,7 +33,6 @@ class LSTM(nn.Module):
         else:
             self.lstm = nn.LSTM(emb_size, hidden_size, batch_first=True)
 
-
         # Variable size of Fully Connected Layer, dependent on Combination Unit 
         if combo_unit == CombinationType.ADD:
             self.multiplier = 2
@@ -51,7 +50,6 @@ class LSTM(nn.Module):
         self.fc_first =  nn.Linear(self.hidden_mult, self.hidden_mult)
         self.relu = nn.ReLU()
         self.fc_final = nn.Linear(self.hidden_mult, 2)
-
 
         self.h_f_1 = None 
         self.h_f_2 = None 
@@ -73,8 +71,6 @@ class LSTM(nn.Module):
         h_n = h_n[-1]  # h of shape (batch, hidden_size)
         h_n = h_n.unsqueeze(0)
         h_n = self.dropout(h_n)
-        
-        #print("Shape after LSTM 2 layer:",h_n.shape)
                     
         return h_n 
 
